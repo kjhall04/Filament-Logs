@@ -9,7 +9,6 @@ MATERIAL_MAPPING = load_json('material_mapping.json')
 COLOR_MAPPING = load_json('color_mapping.json')
 BRAND_MAPPING = load_json('brand_mapping.json')
 
-
 def generate_filament_barcode(material: str, color: str, brand: str, unique_id: int = None) -> str:
     """
     Generate a barcode for a new filament roll based on the provided information.
@@ -46,3 +45,13 @@ def generate_filament_barcode(material: str, color: str, brand: str, unique_id: 
     # Construct the barcode
     barcode = f"{material_code}{color_code}{brand_code}{unique_id_str}"
     return barcode
+
+
+if __name__ == '__main__':
+
+    material = input('Enter the material: ')
+    color = input('Enter the color: ')
+    brand = input('Enter the brand: ')
+
+    barcode = generate_filament_barcode(material, color, brand)
+    print(f'New barcode is {barcode}')

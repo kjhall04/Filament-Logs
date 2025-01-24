@@ -12,7 +12,7 @@ try:
 except FileNotFoundError:
     workbook = openpyxl.Workbook()
     sheet = workbook.active
-    sheet.append(['Timestamp', 'Barcode', 'Filament', 'Weight (g)'])  # Add headers
+    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Material', 'Color', 'Weight (g)'])  # Add headers
 
 def log_filament_data():
     """
@@ -24,18 +24,20 @@ def log_filament_data():
         try:
             # Gather data
             barcode = log_modules.get_barcode()
-            weight = log_modules.get_weight()
-            decoded = log_modules.decode_barcode(barcode)
+            material, color, brand = log_modules.decode_barcode(barcode)
 
             # Display log info
-            print(f'Logging weight for filament: {decoded}')
+            print(f'Logging weight for filament: {brand} {color} {material}')
+
+            weight = log_modules.get_weight()
 
             # Append data to the sheet
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            sheet.append([timestamp, barcode, decoded, weight])
+
+            sheet.append([timestamp, barcode, brand, material, color, weight])
             workbook.save(FILE_PATH)
 
-            print(f'Logged: {timestamp}, Barcode: {barcode}, Filament: {decoded}, Weight: {weight}')
+            print(f'Logged: {timestamp}, Barcode: {barcode}, Brand: {brand}, Color: {color}, Material: {material}, Weight: {weight}')
 
         except KeyboardInterrupt:
             print('\nExiting program. Goodbye!')
