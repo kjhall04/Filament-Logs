@@ -1,4 +1,5 @@
 import json
+import difflib
 
 def get_barcode() -> str:
     """
@@ -12,7 +13,6 @@ def get_barcode() -> str:
             return barcode
         print('Invalid barcode. Please scan a valid 13-digit numeric barcode.')
 
-
 def get_weight() -> str:
     """
     Prompt the user to input the weight of filament and validate it as a numeric value.
@@ -25,16 +25,15 @@ def get_weight() -> str:
             return f'{weight} g'
         print('Invalid weight. Please enter a numeric value.')
 
-
 def decode_barcode(barcode: str) -> str:
     """
-    Decode a 13-digit barcode into a description using JSON mappings.
+    Decode a 13-digit barcode into a description using JSON mappings with fuzzy matching.
 
     Args:
         barcode (str): The 13-digit barcode.
 
     Returns:
-        str: The decoded description.
+        tuple: The decoded material, color, and brand.
     """
     if len(barcode) != 13:
         raise ValueError("Barcode must be exactly 13 digits long.")
@@ -48,20 +47,48 @@ def decode_barcode(barcode: str) -> str:
     color_code = barcode[2:5]
     brand_code = barcode[:2]
 
-    # Decode each segment using the mappings
-    material = material_mapping.get(material_code, "Unknown Material")
-    color = color_mapping.get(color_code, "Unknown Color")
-    brand = brand_mapping.get(brand_code, "Unknown Brand")
+    # Decode each segment using the mappings with fuzzy matching
+    material = get_closest_match(material_code, material_mapping, "Unknown Material")
+    color = get_closest_match(color_code, color_mapping, "Unknown Color")
+    brand = get_closest_match(brand_code, brand_mapping, "Unknown Brand")
 
-    # Combine the decoded segments into a full description
     return material, color, brand
 
+def get_closest_match(code, mapping, default):
+    """
+    Find the closest match for a code in a given mapping using fuzzy matching.
+
+    Args:
+        code (str): The code to match.
+        mapping (dict): The mapping dictionary to search in.
+        default (str): The default value if no close match is found.
+
+    Returns:
+        str: The matched value or the default.
+    """
+    keys = list(mapping.keys())
+    matches = difflib.get_close_matches(code, keys, n=1, cutoff=0.6)
+    if matches:
+        return mapping[matches[0]]
+    return default
+
 def load_json(filename):
+    """
+    Load a JSON file and return its content.
+
+    Args:
+        filename (str): The name of the JSON file.
+
+    Returns:
+        dict: The content of the JSON file.
+    """
     with open(filename, 'r') as file:
         return json.load(file)
 
-
 if __name__ == '__main__':
-
-    decoded = decode_barcode(input('Enter in a barcode: '))
-    print(decoded)
+    try:
+        barcode = input('Enter a barcode: ').strip()
+        decoded = decode_barcode(barcode)
+        print(f"Decoded Barcode: Material={decoded[0]}, Color={decoded[1]}, Brand={decoded[2]}")
+    except Exception as e:
+        print(f"Error: {e}")

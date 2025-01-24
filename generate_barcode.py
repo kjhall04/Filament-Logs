@@ -46,12 +46,12 @@ def generate_filament_barcode(material: str, color: str, brand: str, unique_id: 
     barcode = f"{material_code}{color_code}{brand_code}{unique_id_str}"
     return barcode
 
-
 if __name__ == '__main__':
 
-    material = input('Enter the material: ')
-    color = input('Enter the color: ')
-    brand = input('Enter the brand: ')
+    while True:
+        material = input('Enter the material: ')
+        color = input('Enter the color: ')
+        brand = input('Enter the brand: ')
 
-    barcode = generate_filament_barcode(material, color, brand)
-    print(f'New barcode is {barcode}')
+        barcode = generate_filament_barcode(material, color, brand)
+        print(f'New barcode is {barcode}')
