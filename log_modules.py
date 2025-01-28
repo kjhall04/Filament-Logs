@@ -33,26 +33,26 @@ def decode_barcode(barcode: str) -> str:
         barcode (str): The 13-digit barcode.
 
     Returns:
-        tuple: The decoded material, color, and brand.
+        tuple: The decoded brand, color, and material.
     """
     if len(barcode) != 13:
         raise ValueError("Barcode must be exactly 13 digits long.")
     
-    material_mapping = load_json('material_mapping.json')
-    color_mapping = load_json('color_mapping.json')
     brand_mapping = load_json('brand_mapping.json')
+    color_mapping = load_json('color_mapping.json')
+    material_mapping = load_json('material_mapping.json')
 
     # Split the barcode into segments for material, color, and brand
-    material_code = barcode[5:7]
-    color_code = barcode[2:5]
     brand_code = barcode[:2]
+    color_code = barcode[2:5]
+    material_code = barcode[5:7]
 
     # Decode each segment using the mappings with fuzzy matching
-    material = get_closest_match(material_code, material_mapping, "Unknown Material")
-    color = get_closest_match(color_code, color_mapping, "Unknown Color")
     brand = get_closest_match(brand_code, brand_mapping, "Unknown Brand")
+    color = get_closest_match(color_code, color_mapping, "Unknown Color")
+    material = get_closest_match(material_code, material_mapping, "Unknown Material")
 
-    return material, color, brand
+    return brand, color, material
 
 def get_closest_match(code, mapping, default):
     """
@@ -85,7 +85,7 @@ def load_json(filename):
     with open(filename, 'r') as file:
         return json.load(file)
 
-if __name__ == '__main__':
+if __name__ == '__main__': 
     try:
         barcode = input('Enter a barcode: ').strip()
         decoded = decode_barcode(barcode)
