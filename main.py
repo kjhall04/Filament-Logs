@@ -27,7 +27,7 @@ def log_filament_data(generate):
             try:
                 # Gather data
                 barcode = log_modules.get_barcode()
-                brand, color, material = log_modules.decode_barcode(barcode)
+                brand, color, material, location = log_modules.decode_barcode(barcode)
 
                 # Display log info
                 print(f'Logging weight for filament: {brand} {color} {material}')
