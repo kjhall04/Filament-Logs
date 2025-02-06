@@ -33,7 +33,7 @@ def decode_barcode(barcode: str) -> str:
         barcode (str): The 13-digit barcode.
 
     Returns:
-        tuple: The decoded brand, color, and material.
+        tuple: The decoded brand, color, material, and location.
     """
     if len(barcode) != 13:
         raise ValueError("Barcode must be exactly 13 digits long.")
@@ -46,13 +46,15 @@ def decode_barcode(barcode: str) -> str:
     brand_code = barcode[:2]
     color_code = barcode[2:5]
     material_code = barcode[5:7]
+    location_code = barcode[7]
 
     # Decode each segment using the mappings with fuzzy matching
     brand = get_closest_match(brand_code, brand_mapping, "Unknown Brand")
     color = get_closest_match(color_code, color_mapping, "Unknown Color")
     material = get_closest_match(material_code, material_mapping, "Unknown Material")
+    location = 'Lab' if location_code == 0 else 'Storage'
 
-    return brand, color, material
+    return brand, color, material, location
 
 def get_closest_match(code, mapping, default):
     """
@@ -89,6 +91,6 @@ if __name__ == '__main__':
     try:
         barcode = input('Enter a barcode: ').strip()
         decoded = decode_barcode(barcode)
-        print(f"Decoded Barcode: Material={decoded[0]}, Color={decoded[1]}, Brand={decoded[2]}")
+        print(f"Decoded Barcode: Material={decoded[0]}, Color={decoded[1]}, Brand={decoded[2]}, Location={decoded[3]}")
     except Exception as e:
         print(f"Error: {e}")

@@ -13,7 +13,7 @@ try:
 except FileNotFoundError:
     workbook = openpyxl.Workbook()
     sheet = workbook.active
-    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Weight (g)'])  # Add headers
+    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Weight (g)', 'Location'])  # Add headers
 
 def log_filament_data(generate):
     """
@@ -37,10 +37,10 @@ def log_filament_data(generate):
                 # Append data to the sheet
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-                sheet.append([timestamp, barcode, brand, color, material, weight])
+                sheet.append([timestamp, barcode, brand, color, material, weight, location])
                 workbook.save(FILE_PATH)
 
-                print(f'Logged: {timestamp}, Barcode: {barcode}, Brand: {brand}, Color: {color}, Material: {material}, Weight: {weight}')
+                print(f'Logged: {timestamp}, Barcode: {barcode}, Brand: {brand}, Color: {color}, Material: {material}, Weight: {weight}, Location: {location}')
 
             except KeyboardInterrupt:
                 print('\nExiting program. Goodbye!')
@@ -54,8 +54,9 @@ def log_filament_data(generate):
                 brand = input('Enter the brand: ')  # Brand first
                 color = input('Enter the color: ')
                 material = input('Enter the material: ')  # Material last
+                location = input('Enter the location of the filament: ')
 
-                barcode = generate_barcode.generate_filament_barcode(brand, color, material, sheet)
+                barcode = generate_barcode.generate_filament_barcode(brand, color, material, location, sheet)
                 print(f'New barcode is {barcode}')
             except KeyboardInterrupt:
                 print('\nExiting program. Goodbye!')

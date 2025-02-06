@@ -5,7 +5,7 @@ import difflib
 # File path for the Excel workbook
 FILE_PATH = 'filament_inventory.xlsx'
 
-def generate_filament_barcode(brand: str, color: str, material: str, sheet) -> str:
+def generate_filament_barcode(brand: str, color: str, material: str, location: str, sheet) -> str:
     """
     Generate a barcode for a new filament roll based on the provided information, with fuzzy matching.
     
@@ -13,6 +13,7 @@ def generate_filament_barcode(brand: str, color: str, material: str, sheet) -> s
         brand (str): The brand name (e.g., "Brand A").
         color (str): The color name (e.g., "White").
         material (str): The material name (e.g., "PLA").
+        location (str): Location of the filament (e.g., "Lab").
         sheet: The Excel sheet object to read existing barcodes from.
     
     Returns:
@@ -26,6 +27,7 @@ def generate_filament_barcode(brand: str, color: str, material: str, sheet) -> s
     brand_code = get_closest_match(brand, brand_mapping, "Invalid Brand")
     color_code = get_closest_match(color, color_mapping, "Invalid Color")
     material_code = get_closest_match(material, material_mapping, "Invalid Material")
+    location_code = 0 if location.lower() == "lab" else (1 if location.lower() == "storage" else "Invalid Material")
 
     # Validate that the closest matches are found
     if brand_code == "Invalid Brand":
@@ -34,6 +36,8 @@ def generate_filament_barcode(brand: str, color: str, material: str, sheet) -> s
         raise ValueError(f"Invalid color: {color}. Please use a valid color name.")
     if material_code == "Invalid Material":
         raise ValueError(f"Invalid material: {material}. Please use a valid material name.")
+    if location_code == "Invalid Material":
+        raise ValueError(f"Invalid material: {location}. Pleaus use a valid location name")
     
     # Extract existing barcodes from the sheet
     barcodes = [row[1].value for row in sheet.iter_rows(min_row=2) if row[1].value]
@@ -44,11 +48,11 @@ def generate_filament_barcode(brand: str, color: str, material: str, sheet) -> s
     # Determine the next unique ID
     next_unique_id = max(unique_ids, default = 0) + 1
 
-    # Format unique ID as zero-padded string (up to 6 digits)
-    unique_id_str = f"{next_unique_id:06}"
+    # Format unique ID as zero-padded string (up to 5 digits)
+    unique_id_str = f"{next_unique_id:05}"
 
     # Construct the barcode
-    barcode = f"{brand_code}{color_code}{material_code}{unique_id_str}"
+    barcode = f"{brand_code}{color_code}{material_code}{location_code}{unique_id_str}"
     return barcode
 
 def get_closest_match(name, mapping, default):
@@ -93,15 +97,16 @@ if __name__ == '__main__':
     except FileNotFoundError:
         workbook = openpyxl.Workbook()
         sheet = workbook.active
-        sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Weight (g)'])  # Add headers
+        sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Weight (g)', 'Location'])  # Add headers
 
     while True:
         brand = input('Enter the brand: ')  # Brand first
         color = input('Enter the color: ')
         material = input('Enter the material: ')  # Material last
+        location = input('Enter the location of the filament: ')
 
         try:
-            barcode = generate_filament_barcode(brand, color, material, sheet)
+            barcode = generate_filament_barcode(brand, color, material, location, sheet)
             print(f'New barcode is {barcode}')
         except ValueError as e:
             print(e)
