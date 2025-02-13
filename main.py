@@ -13,7 +13,7 @@ try:
 except FileNotFoundError:
     workbook = openpyxl.Workbook()
     sheet = workbook.active
-    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Weight (g)', 'Location'])  # Add headers
+    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 'Weight (g)', 'Location'])  # Add headers
 
 def log_filament_data(generate):
     """
@@ -27,20 +27,29 @@ def log_filament_data(generate):
             try:
                 # Gather data
                 barcode = log_modules.get_barcode()
-                brand, color, material, location = log_modules.decode_barcode(barcode)
+                brand, color, material, attribute_1, attribute_2, location = log_modules.decode_barcode(barcode)
 
                 # Display log info
-                print(f'Logging weight for filament: {brand} {color} {material}')
+                print(f'Logging weight for filament: {brand} {color} {material} {attribute_1} {attribute_2}')
 
                 weight = log_modules.get_weight()
 
                 # Append data to the sheet
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-                sheet.append([timestamp, barcode, brand, color, material, weight, location])
+                sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, weight, location])
                 workbook.save(FILE_PATH)
 
-                print(f'Logged: {timestamp}, Barcode: {barcode}, Brand: {brand}, Color: {color}, Material: {material}, Weight: {weight}, Location: {location}')
+                print(f'''Logged: 
+                      Timestamp: {timestamp}, 
+                      Barcode: {barcode}, 
+                      Brand: {brand}, 
+                      Color: {color}, 
+                      Material: {material}, 
+                      Attribute 1: {attribute_1}, 
+                      Attribute 2: {attribute_2}, 
+                      Weight: {weight}, 
+                      Location: {location}''')
 
             except KeyboardInterrupt:
                 print('\nExiting program. Goodbye!')
@@ -51,20 +60,35 @@ def log_filament_data(generate):
     else:
         while True:
             try:
-                brand = input('Enter the brand: ')  # Brand first
+                brand = input('Enter the brand: ')
                 color = input('Enter the color: ')
-                material = input('Enter the material: ')  # Material last
+                material = input('Enter the material: ')
+                attribute_1 = input('Enter the first attribute: ')
+                attribute_2 = input('Enter the second attribute: ')
                 location = input('Enter the location of the filament: ')
 
-                barcode = generate_barcode.generate_filament_barcode(brand, color, material, location, sheet)
-                brand, color, material, location = log_modules.decode_barcode(barcode)
-                print(f'New barcode for {brand} {color} {material} in {location} is {barcode}')
+                barcode = generate_barcode.generate_filament_barcode(brand, color, material, attribute_1, attribute_2, location, sheet)
+                brand, color, material, attribute_1, attribute_2, location = log_modules.decode_barcode(barcode)
+                print(f'New barcode for {brand} {color} {material} {attribute_1} {attribute_2} in {location} is {barcode}')
+                # Append data to the sheet
+                timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+                weight = log_modules.get_weight()
+
+                sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, weight, location])
+                workbook.save(FILE_PATH)
+
+                print(f'''Logged: 
+                      Timestamp: {timestamp}, 
+                      Barcode: {barcode}, 
+                      Brand: {brand}, 
+                      Color: {color}, 
+                      Material: {material}, 
+                      Attribute 1: {attribute_1}, Attribute 2: {attribute_2}, Weight: {weight}, Location: {location}''')
             except KeyboardInterrupt:
                 print('\nExiting program. Goodbye!')
                 break
             except ValueError as e:
                 print(e)
-
 
 if __name__ == '__main__':
     log_filament_data(generate=False)
