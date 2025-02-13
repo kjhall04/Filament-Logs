@@ -1,7 +1,6 @@
 import openpyxl
 import json
 import difflib
-import log_modules
 
 # File path for the Excel workbook
 FILE_PATH = 'filament_inventory.xlsx'
@@ -20,16 +19,24 @@ def generate_filament_barcode(brand: str, color: str, material: str, attribute_1
         sheet: The Excel sheet object to read existing barcodes from.
     
     Returns:
-        str: A 13-digit numeric barcode.
+        str: A 16-digit numeric barcode.
     """
     brand_mapping = load_json('brand_mapping.json')
     color_mapping = load_json('color_mapping.json')
     material_mapping = load_json('material_mapping.json')
     attribute_mapping = load_json('attribute_mapping.json')
 
+    # Flatten the nested color mapping dynamically
+    flat_color_mapping = {}
+    for category, colors in color_mapping.items():
+        if isinstance(colors, dict):
+            flat_color_mapping.update(colors)
+        else:
+            flat_color_mapping[category] = colors
+
     # Get closest matches for material, color, and brand
     brand_code = get_closest_match(brand, brand_mapping, "Invalid Brand")
-    color_code = get_closest_match(color, color_mapping, "Invalid Color")
+    color_code = get_closest_match(color, flat_color_mapping, "Invalid Color")
     material_code = get_closest_match(material, material_mapping, "Invalid Material")
     attribute_1_code = get_closest_match(attribute_1, attribute_mapping, "Invalid Attribute")
     attribute_2_code = get_closest_match(attribute_2, attribute_mapping, "Invalid Attribute")
@@ -53,7 +60,7 @@ def generate_filament_barcode(brand: str, color: str, material: str, attribute_1
     barcodes = [row[1].value for row in sheet.iter_rows(min_row=2) if row[1].value]
 
     # Extract unique IDs from existing barcodes
-    unique_ids = [int(barcode[-5:]) for barcode in barcodes if barcode.isdigit() and len(barcode) == 16]
+    unique_ids = [int(barcode[-5:]) for barcode in barcodes if barcode.isdigit() and len(barcode) == 17]
 
     # Determine the next unique ID
     next_unique_id = max(unique_ids, default = 0) + 1

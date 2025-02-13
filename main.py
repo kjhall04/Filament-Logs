@@ -13,7 +13,14 @@ try:
 except FileNotFoundError:
     workbook = openpyxl.Workbook()
     sheet = workbook.active
-    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 'Weight (g)', 'Location'])  # Add headers
+    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 'Filament Amount (g)', 'Location', 'Roll Weight (g)'])  # Add headers
+
+def get_roll_weight(barcode: str, sheet) -> float:
+    """Retrieve the roll weight from the spreadsheet based on the barcode."""
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if row[1] == barcode:  # Barcode is in the second column
+            return row[-1]    # Roll Weight (g) is the last column
+    raise ValueError(f"Roll weight not found for barcode: {barcode}")
 
 def log_filament_data(generate):
     """
@@ -32,12 +39,13 @@ def log_filament_data(generate):
                 # Display log info
                 print(f'Logging weight for filament: {brand} {color} {material} {attribute_1} {attribute_2}')
 
-                weight = log_modules.get_weight()
+                roll_weight = get_roll_weight(barcode, sheet)
+                filament_amount = log_modules.get_current_weight(roll_weight)
 
                 # Append data to the sheet
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
-                sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, weight, location])
+                sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, filament_amount, location])
                 workbook.save(FILE_PATH)
 
                 print(f'''Logged: 
@@ -48,7 +56,7 @@ def log_filament_data(generate):
                       Material: {material}, 
                       Attribute 1: {attribute_1}, 
                       Attribute 2: {attribute_2}, 
-                      Weight: {weight}, 
+                      Filament Amount: {filament_amount}, 
                       Location: {location}''')
 
             except KeyboardInterrupt:
@@ -72,9 +80,9 @@ def log_filament_data(generate):
                 print(f'New barcode for {brand} {color} {material} {attribute_1} {attribute_2} in {location} is {barcode}')
                 # Append data to the sheet
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-                weight = log_modules.get_weight()
+                roll_weight, filament_amount = log_modules.get_starting_weight()
 
-                sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, weight, location])
+                sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, filament_amount, location, roll_weight])
                 workbook.save(FILE_PATH)
 
                 print(f'''Logged: 
@@ -83,7 +91,12 @@ def log_filament_data(generate):
                       Brand: {brand}, 
                       Color: {color}, 
                       Material: {material}, 
-                      Attribute 1: {attribute_1}, Attribute 2: {attribute_2}, Weight: {weight}, Location: {location}''')
+                      Attribute 1: {attribute_1}, 
+                      Attribute 2: {attribute_2}, 
+                      Filament Amount: {filament_amount}, 
+                      Location: {location}, 
+                      Roll Weight: {roll_weight}''')
+                
             except KeyboardInterrupt:
                 print('\nExiting program. Goodbye!')
                 break
