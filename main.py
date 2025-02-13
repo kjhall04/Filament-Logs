@@ -57,7 +57,8 @@ def log_filament_data(generate):
                 location = input('Enter the location of the filament: ')
 
                 barcode = generate_barcode.generate_filament_barcode(brand, color, material, location, sheet)
-                print(f'New barcode is {barcode}')
+                brand, color, material, location = log_modules.decode_barcode(barcode)
+                print(f'New barcode for {brand} {color} {material} in {location} is {barcode}')
             except KeyboardInterrupt:
                 print('\nExiting program. Goodbye!')
                 break
