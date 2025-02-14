@@ -3,6 +3,7 @@ import difflib
 import hid
 import struct
 import time
+
 def get_barcode() -> str:
     """
     Prompt the user to scan a barcode and validate it as a 16-digit numeric string.

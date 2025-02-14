@@ -42,22 +42,26 @@ def log_filament_data(generate):
                 roll_weight = get_roll_weight(barcode, sheet)
                 filament_amount = log_modules.get_current_weight(roll_weight)
 
-                # Append data to the sheet
-                timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-
-                sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, filament_amount, location])
+                # Find and update the existing row
+                for row in sheet.iter_rows(min_row=2):
+                    if row[1].value == barcode:  # Barcode is in the second column
+                        row[7].value = filament_amount  # Update filament amount (8th column)
+                        break
                 workbook.save(FILE_PATH)
 
-                print(f'''Logged: 
-                      Timestamp: {timestamp}, 
+                print(f'''Updated: 
                       Barcode: {barcode}, 
                       Brand: {brand}, 
                       Color: {color}, 
-                      Material: {material}, 
-                      Attribute 1: {attribute_1}, 
-                      Attribute 2: {attribute_2}, 
-                      Filament Amount: {filament_amount}, 
-                      Location: {location}''')
+                      Material: {material}''') 
+                
+                if attribute_1 != '':
+                    print(f'Attribute 1: {attribute_1}')
+                if attribute_2 != '':
+                    print(f'Attribute 2: {attribute_2}')
+
+                print(f'New Filament Amount: {filament_amount}')
+                print(f'Location: {location}')
 
             except KeyboardInterrupt:
                 print('\nExiting program. Goodbye!')
@@ -77,7 +81,7 @@ def log_filament_data(generate):
 
                 barcode = generate_barcode.generate_filament_barcode(brand, color, material, attribute_1, attribute_2, location, sheet)
                 brand, color, material, attribute_1, attribute_2, location = log_modules.decode_barcode(barcode)
-                print(f'New barcode for {brand} {color} {material} {attribute_1} {attribute_2} in {location} is {barcode}')
+                print(f'New barcode for {brand} {color} {material} {attribute_1 if attribute_1 != '' else ''} {attribute_2 if attribute_2 != '' else ''} in {location} is {barcode}')
                 # Append data to the sheet
                 timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
                 roll_weight, filament_amount = log_modules.get_starting_weight()
@@ -90,10 +94,14 @@ def log_filament_data(generate):
                       Barcode: {barcode}, 
                       Brand: {brand}, 
                       Color: {color}, 
-                      Material: {material}, 
-                      Attribute 1: {attribute_1}, 
-                      Attribute 2: {attribute_2}, 
-                      Filament Amount: {filament_amount}, 
+                      Material: {material}''') 
+                
+                if attribute_1 != '':
+                    print(f'Attribute 1: {attribute_1}')
+                if attribute_2 != '':
+                    print(f'Attribute 2: {attribute_2}')
+                    
+                print(f'''Filament Amount: {filament_amount}, 
                       Location: {location}, 
                       Roll Weight: {roll_weight}''')
                 
