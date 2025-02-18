@@ -110,6 +110,12 @@ def get_current_weight(roll_weight: str) -> str:
     finally:
         device.close()
 
+def get_roll_weight(barcode: str, sheet) -> float:
+    """Retrieve the roll weight from the spreadsheet based on the barcode."""
+    for row in sheet.iter_rows(min_row=2, values_only=True):
+        if row[1] == barcode:  # Barcode is in the second column
+            return row[-1]    # Roll Weight (g) is the last column
+    raise ValueError(f"Roll weight not found for barcode: {barcode}")
 
 def decode_barcode(barcode: str) -> str:
     """
