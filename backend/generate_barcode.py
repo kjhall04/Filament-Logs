@@ -3,7 +3,7 @@ import json
 import difflib
 
 # File path for the Excel workbook
-FILE_PATH = 'filament_inventory.xlsx'
+FILE_PATH = 'Filament-Logs\\filament_inventory.xlsx'
 
 def generate_filament_barcode(brand: str, color: str, material: str, attribute_1: str, attribute_2: str, location: str, sheet) -> str:
     """
