@@ -130,10 +130,10 @@ def decode_barcode(barcode: str) -> str:
     if len(barcode) != 17:
         raise ValueError("Barcode must be exactly 17 digits long.")
     
-    brand_mapping = load_json('brand_mapping.json')
-    color_mapping = load_json('color_mapping.json')
-    material_mapping = load_json('material_mapping.json')
-    attribute_mapping = load_json('attribute_mapping.json')
+    brand_mapping = load_json('data\\brand_mapping.json')
+    color_mapping = load_json('data\\color_mapping.json')
+    material_mapping = load_json('data\\material_mapping.json')
+    attribute_mapping = load_json('data\\attribute_mapping.json')
 
     # Flatten the nested color mapping dynamically
     flat_color_mapping = {}
