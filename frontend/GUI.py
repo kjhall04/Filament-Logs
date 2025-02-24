@@ -15,8 +15,13 @@ class FrameManager(ctk.CTk):
         self.geometry(f"{1100}x{580}")
 
         # Configure layout grid
-        self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=1)
         self.grid_columnconfigure(0, weight=1)
+
+        # Title label that stays fixed at the top
+        self.title_label = ctk.CTkLabel(self, text='-- Filament Inventory --', font=('Arial', 28, 'bold'))
+        self.title_label.grid(row=0, column=0, pady=10)
 
         # Create a dictionary for frames
         self.frames = {}
@@ -46,7 +51,7 @@ class FrameManager(ctk.CTk):
         # Add frames to dictionary and pass class and name and position when displayed
         frame = page_class(self)
         self.frames[name] = frame
-        frame.grid(row=0, column=0, sticky='nsew')
+        frame.grid(row=1, column=0, sticky='nsew')
 
     def show_frame(self, name):
         # Show the frame listed

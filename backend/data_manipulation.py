@@ -4,17 +4,18 @@ import hid
 import struct
 import time
 
-def get_barcode() -> str:
+def validate_barcode(entry_widget: str) -> str:
     """
-    Prompt the user to scan a barcode and validate it as a 16-digit numeric string.
+    Retrieves the barcode directly from the entry widget and validates it as a 16-digit numeric string.
+    Args:
+        entry_widget: The CustomTkinter entry widget where the barcode is entered.
     Returns:
-        str: The valid barcode.
+        str: The valid barcode, or an empty string if invalid.
     """
-    while True:
-        barcode = input('Ready to scan barcode: ').strip()
-        if len(barcode) == 16 and barcode.isdigit():
-            return barcode
-        print('Invalid barcode. Please scan a valid 16-digit numeric barcode.')
+    barcode = entry_widget.get().strip()
+    if len(barcode) == 17 and barcode.isdigit():
+        return barcode
+    return ""
 
 def get_starting_weight() -> str:
     """
