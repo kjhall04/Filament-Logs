@@ -1,6 +1,6 @@
 import openpyxl
 import time
-import log_modules
+import data_manipulation
 import generate_barcode
 
 # File path for the Excel workbook
@@ -25,8 +25,8 @@ def log_filament_data():
     while True:
         try:
             # Gather data
-            barcode = log_modules.get_barcode()
-            brand, color, material, attribute_1, attribute_2, location = log_modules.decode_barcode(barcode)
+            barcode = data_manipulation.get_barcode()
+            brand, color, material, attribute_1, attribute_2, location = data_manipulation.decode_barcode(barcode)
 
             # Display log info
             print('Logging weight for filament: {} {} {}{}{}'.format(
@@ -37,8 +37,8 @@ def log_filament_data():
                 f' {attribute_2}' if attribute_2 else ''
             ))
 
-            roll_weight = log_modules.get_roll_weight(barcode, sheet)
-            filament_amount = log_modules.get_current_weight(roll_weight)
+            roll_weight = data_manipulation.get_roll_weight(barcode, sheet)
+            filament_amount = data_manipulation.get_current_weight(roll_weight)
 
             # Find and update the existing row
             for row in sheet.iter_rows(min_row=2):
@@ -85,7 +85,7 @@ def log_full_filament_data():
             location = input('Enter the location of the filament: ')
 
             barcode = generate_barcode.generate_filament_barcode(brand, color, material, attribute_1, attribute_2, location, sheet)
-            brand, color, material, attribute_1, attribute_2, location = log_modules.decode_barcode(barcode)
+            brand, color, material, attribute_1, attribute_2, location = data_manipulation.decode_barcode(barcode)
             
             print('New barcode for {} {} {}{}{} in {} is {}'.format(
                 brand,
@@ -99,7 +99,7 @@ def log_full_filament_data():
             
             # Append data to the sheet
             timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            roll_weight, filament_amount = log_modules.get_starting_weight()
+            roll_weight, filament_amount = data_manipulation.get_starting_weight()
 
             sheet.append([timestamp, barcode, brand, color, material, attribute_1, attribute_2, filament_amount, location, roll_weight, '0'])
             workbook.save(FILE_PATH)

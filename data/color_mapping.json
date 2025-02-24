@@ -120,6 +120,30 @@
         "306": "Stone Gray",
         "307": "Dove Gray",
         "308": "Space Gray"
+    },
+    "Dual Color": {
+        "401": "Red and Black",
+        "402": "Blue and White",
+        "403": "Green and Yellow",
+        "404": "Purple and Gold",
+        "405": "Pink and Gray",
+        "406": "Orange and Blue",
+        "407": "Brown and Cream",
+        "408": "Black and White",
+        "409": "Gray and Teal",
+        "410": "Green and Black",
+        "411": "Yellow and Red"
+    },
+    "Triple Color": {
+        "501": "Red, White, and Blue",
+        "502": "Green, Red, and Gold",
+        "503": "Purple, Blue, and Black",
+        "504": "Pink, Yellow, and Orange",
+        "505": "Brown, White, and Black",
+        "506": "Gray, Blue, and Silver",
+        "507": "Teal, Purple, and Green",
+        "508": "Orange, Black, and White",
+        "509": "Yellow, Red, and Brown",
+        "510": "Red, Yellow, and Blue"
     }
 }
-

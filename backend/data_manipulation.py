@@ -161,9 +161,12 @@ def decode_barcode(barcode: str) -> str:
 
     return brand, color, material, attribute_1, attribute_2, location
 
+import difflib
+
 def get_closest_match(code, mapping, default):
     """
-    Find the closest match for a code in a given mapping using fuzzy matching.
+    Find the closest match for a code in a given mapping using fuzzy matching, 
+    ignoring the order of words.
 
     Args:
         code (str): The code to match.
@@ -173,11 +176,20 @@ def get_closest_match(code, mapping, default):
     Returns:
         str: The matched value or the default.
     """
-    keys = list(mapping.keys())
-    matches = difflib.get_close_matches(code, keys, n=1, cutoff=0.6)
+    # Normalize input by splitting and sorting words
+    normalized_input = ' '.join(sorted(code.split()))
+    # Normalize dictionary keys
+    normalized_keys = [' '.join(sorted(key.split())) for key in mapping.keys()]
+
+    # Find matches using the normalized keys
+    matches = difflib.get_close_matches(normalized_input, normalized_keys, n=1, cutoff=0.6)
     if matches:
-        return mapping[matches[0]]
+        # Return the original key's value by indexing back into the mapping
+        original_key = list(mapping.keys())[normalized_keys.index(matches[0])]
+        return mapping[original_key]
+
     return default
+
 
 def load_json(filename):
     """
