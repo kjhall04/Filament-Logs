@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from Frames import *
+from frontend.Frames import *
 
 # Set the default appearance of the GUI to dark mode and the colors to green
 ctk.set_appearance_mode('dark')
@@ -55,5 +55,5 @@ class FrameManager(ctk.CTk):
 
 # If main then run with debugger
 if __name__ == '__main__':
-    app = FrameManager(debug_mode=False)
+    app = FrameManager(debug_mode=True)
     app.mainloop()
