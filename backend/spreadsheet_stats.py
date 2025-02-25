@@ -1,6 +1,6 @@
 import openpyxl
 
-FILE_PATH = FILE_PATH = 'Filament-Logs\\filament_inventory.xlsx'
+FILE_PATH = 'Filament-Logs\\filament_inventory.xlsx'
 
 def load_spreadsheet():
     try:
