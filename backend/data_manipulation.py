@@ -22,7 +22,7 @@ def get_starting_weight() -> str:
     Prompt the user to place filament on the scale to get the starting weight of filament.
     The scale is a DYMO M10.
     Returns:
-        str: The weight with 'g' appended.
+        str: The weight.
     """
     VENDOR_ID = 0x0922
     PRODUCT_ID = 0x8003
@@ -49,11 +49,11 @@ def get_starting_weight() -> str:
                     weight_grams = round(weight_raw * 28.3495, 2)
                     filament_amount = 1000
                     roll_weight = weight_grams - filament_amount
-                    return f"{roll_weight} g", f"{filament_amount} g"
+                    return f"{roll_weight}", f"{filament_amount}"
                 else:
                     filament_amount = 1000
                     roll_weight = weight_raw - filament_amount
-                    return f"{roll_weight} g", f"{filament_amount} g"
+                    return f"{roll_weight}", f"{filament_amount}"
 
             time.sleep(0.5)
 
@@ -70,7 +70,7 @@ def get_current_weight(roll_weight: str) -> str:
     Prompt the user to place filament on the scale to get the current weight of filament.
     The scale is a DYMO M10.
     Returns:
-        str: The weight with 'g' appended.
+        str: The weight.
     """
     VENDOR_ID = 0x0922
     PRODUCT_ID = 0x8003
@@ -95,11 +95,11 @@ def get_current_weight(roll_weight: str) -> str:
                 if units == "oz":
                     # Convert ounces to grams
                     weight_grams = round(weight_raw * 28.3495, 2)
-                    filament_amount = weight_grams - roll_weight
-                    return f"{filament_amount} g"
+                    filament_amount = weight_grams - float(roll_weight)
+                    return f"{filament_amount}"
                 else:
-                    filament_amount = weight_raw - roll_weight
-                    return f"{filament_amount} g"
+                    filament_amount = weight_raw - float(roll_weight)
+                    return f"{filament_amount}"
 
             time.sleep(0.5)
 
@@ -115,7 +115,7 @@ def get_roll_weight(barcode: str, sheet) -> float:
     """Retrieve the roll weight from the spreadsheet based on the barcode."""
     for row in sheet.iter_rows(min_row=2, values_only=True):
         if row[1] == barcode:  # Barcode is in the second column
-            return row[-1]    # Roll Weight (g) is the last column
+            return row[-2]    # Roll Weight (g) is the last column
     raise ValueError(f"Roll weight not found for barcode: {barcode}")
 
 def decode_barcode(barcode: str) -> str:
@@ -128,9 +128,7 @@ def decode_barcode(barcode: str) -> str:
     Returns:
         tuple: The decoded brand, color, material, and location.
     """
-    if len(barcode) != 17:
-        raise ValueError("Barcode must be exactly 17 digits long.")
-    
+
     brand_mapping = load_json('data\\brand_mapping.json')
     color_mapping = load_json('data\\color_mapping.json')
     material_mapping = load_json('data\\material_mapping.json')
@@ -161,8 +159,6 @@ def decode_barcode(barcode: str) -> str:
     location = 'Lab' if location_code == '0' else 'Storage'
 
     return brand, color, material, attribute_1, attribute_2, location
-
-import difflib
 
 def get_closest_match(code, mapping, default):
     """
