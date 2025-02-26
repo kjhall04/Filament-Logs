@@ -1,6 +1,6 @@
 import customtkinter as ctk
-import backend.data_manipulation as dm
-import backend.spreadsheet_stats as ss
+from backend import data_manipulation as dm
+from backend import spreadsheet_stats as ss
 
 class UserScreen(ctk.CTkFrame):
     def __init__(self, master):

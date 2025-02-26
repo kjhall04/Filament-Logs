@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from frontend.Frames import *
+from Frames import *
 
 # Set the default appearance of the GUI to dark mode and the colors to green
 ctk.set_appearance_mode('dark')
