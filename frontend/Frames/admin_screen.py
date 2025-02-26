@@ -7,8 +7,5 @@ class AdminScreen(ctk.CTkFrame):
         self.container = ctk.CTkFrame(self)
         self.container.pack(expand=True)
 
-        self.label = ctk.CTkLabel(self.container, text='Admin', font=('Arial', 25))
+        self.label = ctk.CTkLabel(self.container, text='Add New Filament', font=('Arial', 16))
         self.label.pack(padx=20, pady=10)
-
-        self.back_button = ctk.CTkButton(self.container, text='Back', command=lambda: self.master.show_frame('UserScreen'))
-        self.back_button.pack(padx=20, pady=5)

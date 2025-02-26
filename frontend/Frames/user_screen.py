@@ -17,6 +17,8 @@ class UserScreen(ctk.CTkFrame):
 
         self.filament_data = ctk.CTkLabel(self.container)
 
+        self.update_weight_button = ctk.CTkButton(self.container, text='Update Weight', command=lambda: self.master.show_frame('UpdateWeightScreen'))
+
         # Bind the event to check when the content of the entry is modified
         self.barcode_entry.bind("<KeyRelease>", self.check_barcode_length)
 
@@ -48,7 +50,9 @@ class UserScreen(ctk.CTkFrame):
             filament_data[4] if filament_data[4] else None,
             filament_data[5],
         ])))
+        
         self.filament_data.pack(padx=20, pady=10)
+        self.update_weight_button.pack(padx=20, pady=10)
 
     def get_current_filament_weight(barcode: str, sheet) -> float:
         for row in sheet.iter_rows(min_row=2, values_only=True):

@@ -29,6 +29,7 @@ class FrameManager(ctk.CTk):
         # Add all the frames by class and name for reference
         self.add_frame(UserScreen, 'UserScreen')
         self.add_frame(AdminScreen, 'AdminScreen')
+        self.add_frame(UpdateWeightScreen, 'UpdateWeightScreen')
 
         # Debug mode that creates a dropdown to the side of all the different
         # frames to iterate through without running the program properly
@@ -41,11 +42,11 @@ class FrameManager(ctk.CTk):
             )
             self.frame_selector.grid(row=0, column=1, padx=10, pady=10, sticky='e')
 
-        # Show the first frame 'Login'
         self.show_frame('UserScreen')
 
-        # Keybinding for switching to AdminScreen
-        self.bind('<Control-Shift-A>', lambda event: self.show_frame('AdminScreen'))
+        # Show the first frame 'Login'
+        self.change_screen = True  # Track current screen
+        self.bind('<Control-Shift-A>', self.toggle_screen) 
 
     def add_frame(self, page_class, name):
         # Add frames to dictionary and pass class and name and position when displayed
@@ -57,6 +58,11 @@ class FrameManager(ctk.CTk):
         # Show the frame listed
         frame = self.frames[name]
         frame.tkraise()
+
+    def toggle_screen(self, event=None):
+        self.change_screen = not self.change_screen  # Toggle between True/False
+        new_screen = 'AdminScreen' if self.change_screen else 'UserScreen'
+        self.show_frame(new_screen)
 
 # If main then run with debugger
 if __name__ == '__main__':
