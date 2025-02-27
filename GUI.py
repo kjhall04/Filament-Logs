@@ -1,5 +1,7 @@
 import customtkinter as ctk
-from Frames import *
+from user_screen import UserScreen
+from admin_screen import AdminScreen
+from update_weight_screen import UpdateWeightScreen
 
 # Set the default appearance of the GUI to dark mode and the colors to green
 ctk.set_appearance_mode('dark')
@@ -40,7 +42,7 @@ class FrameManager(ctk.CTk):
                 values=list(self.frames.keys()),
                 command=self.show_frame,
             )
-            self.frame_selector.grid(row=0, column=1, padx=10, pady=10, sticky='e')
+            self.frame_selector.grid(row=1, column=1, padx=10, pady=10, sticky='e')
 
         self.show_frame('UserScreen')
 

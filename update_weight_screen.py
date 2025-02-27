@@ -7,8 +7,8 @@ class UpdateWeightScreen(ctk.CTkFrame):
         self.container = ctk.CTkFrame(self)
         self.container.pack(expand=True)
 
-        self.step1_label = ctk.CTkLabel(self.container, text='Place filament on scale...', font=('Arial', 16))
-        self.step1_label.pack(padx=20, pady=10)
+        self.step1_label = ctk.CTkLabel(self.container, text='Place filament on scale...', font=('Arial', 18))
+        self.step1_label.pack(padx=20, pady=(10, 5))
 
         self.step2_label = ctk.CTkLabel(self.container, text="Press 'Enter' to continue", font=('Arial', 16)) 
-        self.step2_label.pack(padx=20, pady=10)
+        self.step2_label.pack(padx=20, pady=(5, 10))
