@@ -1,21 +1,25 @@
-import json
-import difflib
 import hid
 import struct
 import time
+import json
+import difflib
 
-def validate_barcode(entry_widget: str) -> str:
+# Constants
+VENDOR_ID = 0x0922
+PRODUCT_ID = 0x8003
+FILAMENT_AMOUNT = 1000
+
+def get_barcode() -> str:
     """
-    Retrieves the barcode directly from the entry widget and validates it as a 16-digit numeric string.
-    Args:
-        entry_widget: The CustomTkinter entry widget where the barcode is entered.
+    Prompt the user to scan a barcode and validate it as a 17-digit numeric string.
     Returns:
-        str: The valid barcode, or an empty string if invalid.
+        str: The valid barcode.
     """
-    barcode = entry_widget.get().strip()
-    if len(barcode) == 17 and barcode.isdigit():
-        return barcode
-    return ""
+    while True:
+        barcode = input('Ready to scan barcode: ').strip()
+        if len(barcode) == 17 and barcode.isdigit():
+            return barcode
+        print('Invalid barcode. Please scan a valid 16-digit numeric barcode.')
 
 def get_starting_weight() -> str:
     """
@@ -24,16 +28,13 @@ def get_starting_weight() -> str:
     Returns:
         str: The weight.
     """
-    VENDOR_ID = 0x0922
-    PRODUCT_ID = 0x8003
-
     try:
         device = hid.device()
         device.open(VENDOR_ID, PRODUCT_ID)
         device.set_nonblocking(False)
 
         print("\n--- Scale Ready ---")
-        input("Place the filament on the scale and press Enter to continue...")
+        input("Press Enter to continue...")
 
         retries = 5
         weight_raw = None
@@ -47,13 +48,15 @@ def get_starting_weight() -> str:
                 if units == "oz":
                     # Convert ounces to grams
                     weight_grams = round(weight_raw * 28.3495, 2)
-                    filament_amount = 1000
-                    roll_weight = weight_grams - filament_amount
-                    return f"{roll_weight}", f"{filament_amount}"
+                    print(f'read weight: {weight_grams}')
+                    roll_weight = weight_grams - FILAMENT_AMOUNT
+                    print(f'roll weight: {roll_weight}')
+                    return f"{roll_weight}", f"{FILAMENT_AMOUNT}"
                 else:
-                    filament_amount = 1000
-                    roll_weight = weight_raw - filament_amount
-                    return f"{roll_weight}", f"{filament_amount}"
+                    print(f'read weight: {weight_raw}')
+                    roll_weight = weight_raw - FILAMENT_AMOUNT
+                    print(f'roll weight: {roll_weight}')
+                    return f"{roll_weight}", f"{FILAMENT_AMOUNT}"
 
             time.sleep(0.5)
 
@@ -72,16 +75,13 @@ def get_current_weight(roll_weight: str) -> str:
     Returns:
         str: The weight.
     """
-    VENDOR_ID = 0x0922
-    PRODUCT_ID = 0x8003
-
     try:
         device = hid.device()
         device.open(VENDOR_ID, PRODUCT_ID)
         device.set_nonblocking(False)
 
         print("\n--- Scale Ready ---")
-        input("Place the filament on the scale and press Enter to continue...")
+        input("Press Enter to continue...")
 
         retries = 5
         weight_raw = None
@@ -128,7 +128,9 @@ def decode_barcode(barcode: str) -> str:
     Returns:
         tuple: The decoded brand, color, material, and location.
     """
-
+    if len(barcode) != 17:
+        raise ValueError("Barcode must be exactly 17 digits long.")
+    
     brand_mapping = load_json('data\\brand_mapping.json')
     color_mapping = load_json('data\\color_mapping.json')
     material_mapping = load_json('data\\material_mapping.json')
@@ -146,19 +148,21 @@ def decode_barcode(barcode: str) -> str:
     brand_code = barcode[:2]
     color_code = barcode[2:5]
     material_code = barcode[5:7]
-    attribute_code_1 = barcode[7:9]
-    attribute_code_2 = barcode[9:11]
+    attr1_code = barcode[7:9]
+    attr2_code = barcode[9:11]
     location_code = barcode[11]
 
     # Decode each segment using the mappings with fuzzy matching
     brand = get_closest_match(brand_code, brand_mapping, "Unknown Brand")
     color = get_closest_match(color_code, flat_color_mapping, "Unknown Color")
     material = get_closest_match(material_code, material_mapping, "Unknown Material")
-    attribute_1 = get_closest_match(attribute_code_1, attribute_mapping, "Unknown Attribute")
-    attribute_2 = get_closest_match(attribute_code_2, attribute_mapping, "Unknown Attribute")
+    attr1 = get_closest_match(attr1_code, attribute_mapping, "Unknown Attribute")
+    attr2 = get_closest_match(attr2_code, attribute_mapping, "Unknown Attribute")
     location = 'Lab' if location_code == '0' else 'Storage'
 
-    return brand, color, material, attribute_1, attribute_2, location
+    return brand, color, material, attr1, attr2, location
+
+import difflib
 
 def get_closest_match(code, mapping, default):
     """
@@ -200,13 +204,3 @@ def load_json(filename):
     """
     with open(filename, 'r') as file:
         return json.load(file)
-
-if __name__ == '__main__':
-    while True:
-        try:
-            barcode = input('Enter the barcode: ')
-            brand, color, material, attribute_1, attribute_2, location = decode_barcode(barcode)
-            print(f'Brand: {brand}, Color: {color}, Material: {material}, Attribute 1: {attribute_1}, Attribute 2: {attribute_2}, Location: {location}')
-        except KeyboardInterrupt:
-            print('Exiting...')
-            break

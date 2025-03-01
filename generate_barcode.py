@@ -1,4 +1,3 @@
-import openpyxl
 import json
 import difflib
 
@@ -19,7 +18,7 @@ def generate_filament_barcode(brand: str, color: str, material: str, attribute_1
         sheet: The Excel sheet object to read existing barcodes from.
     
     Returns:
-        str: A 16-digit numeric barcode.
+        str: A 17-digit numeric barcode.
     """
     brand_mapping = load_json('data\\brand_mapping.json')
     color_mapping = load_json('data\\color_mapping.json')
@@ -84,7 +83,6 @@ def get_closest_match(name, mapping, default):
     Returns:
         str: The matched code or the default.
     """
-    keys = list(mapping.keys())
     values = list(mapping.values())
     matches = difflib.get_close_matches(name, values, n=1, cutoff=0.6)
     if matches:
@@ -103,29 +101,9 @@ def load_json(filename):
     Returns:
         dict: The content of the JSON file.
     """
-    with open(filename, 'r') as file:
-        return json.load(file)
-
-if __name__ == '__main__':
-    # Open the Excel workbook and sheet
     try:
-        workbook = openpyxl.load_workbook(FILE_PATH)
-        sheet = workbook.active
+        with open(filename, 'r') as file:
+            return json.load(file)
     except FileNotFoundError:
-        workbook = openpyxl.Workbook()
-        sheet = workbook.active
-        sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 'Weight (g)', 'Location'])  # Add headers
-
-    while True:
-        brand = input('Enter the brand: ')
-        color = input('Enter the color: ')
-        material = input('Enter the material: ')
-        attribute_1 = input('Enter the first attribute: ')
-        attribute_2 = input('Enter the second attribute: ')
-        location = input('Enter the location of the filament: ')
-
-        try:
-            barcode = generate_filament_barcode(brand, color, material, attribute_1, attribute_2, location, sheet)
-            print(f'New barcode is {barcode}')
-        except ValueError as e:
-            print(e)
+        print(f"Error: {filename} not found.")
+        return
