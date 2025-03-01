@@ -21,5 +21,9 @@
    "20": "TPE (Thermoplastic Elastomer)",
    "21": "PC-ABS (Polycarbonate-ABS Blend)",
    "22": "PPS (Polyphenylene Sulfide)",
-   "23": "Carbon Fiber"
+   "23": "Carbon Fiber",
+   "24": "Hyper PLA",
+   "25": "PLA+",
+   "26": "Bronze",
+   "27": "Wood"
 }

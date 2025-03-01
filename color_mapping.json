@@ -25,7 +25,11 @@
         "039": "Arctic Blue",
         "040": "Ice Blue",
         "041": "Cerulean",
-        "042": "Azure"
+        "042": "Azure",
+        "043": "Light Blue",
+        "044": "Teal",
+        "045": "Aqua Blue",
+        "046": "Sparkle Blue"
     },
     "Green": {
         "061": "Green",
@@ -39,7 +43,8 @@
         "069": "Jade Green",
         "070": "Kelly Green",
         "071": "Chartreuse",
-        "072": "Shamrock Green"
+        "072": "Shamrock Green",
+        "073": "Dark Gray Green"
     },
     "Yellow": {
         "091": "Yellow",
@@ -49,7 +54,10 @@
         "095": "Lemon Yellow",
         "096": "Golden Yellow",
         "097": "Mustard Yellow",
-        "098": "Daffodil Yellow"
+        "098": "Daffodil Yellow",
+        "099": "Fluorescent Yellow",
+        "100": "Gold",
+        "101": "Highlight Yellow"
     },
     "Orange": {
         "121": "Orange",
@@ -73,7 +81,8 @@
         "158": "Amethyst",
         "159": "Plum",
         "160": "Mauve",
-        "161": "Periwinkle"
+        "161": "Periwinkle",
+        "162": "Army Purple"
     },
     "Pink": {
         "181": "Pink",
@@ -94,14 +103,18 @@
         "216": "Mahogany",
         "217": "Chestnut Brown",
         "218": "Cinnamon",
-        "219": "Umber"
+        "219": "Umber",
+        "220": "Bronze",
+        "221": "Army Beige"
     },
     "Black": {
         "241": "Black",
         "242": "Onyx Black",
         "243": "Jet Black",
         "244": "Charcoal Black",
-        "245": "Obsidian Black"
+        "245": "Obsidian Black",
+        "246": "Galaxy Black",
+        "247": "Burnt Titanium"
     },
     "White": {
         "271": "White",
@@ -109,7 +122,10 @@
         "273": "Eggshell White",
         "274": "Pearl White",
         "275": "Snow White",
-        "276": "Alabaster"
+        "276": "Alabaster",
+        "277": "Bone White",
+        "278": "Muted White",
+        "279": "Clear"
     },
     "Gray": {
         "301": "Gray",
@@ -119,7 +135,9 @@
         "305": "Ash Gray",
         "306": "Stone Gray",
         "307": "Dove Gray",
-        "308": "Space Gray"
+        "308": "Space Gray",
+        "309": "Warm Gray",
+        "310": "Silver"
     },
     "Dual Color": {
         "401": "Red and Black",
@@ -145,5 +163,9 @@
         "508": "Orange, Black, and White",
         "509": "Yellow, Red, and Brown",
         "510": "Red, Yellow, and Blue"
+    },
+    "Gradient Colors":{
+        "550": "Galaxy Chameleon",
+        "551": "Rainbow Forest"
     }
 }
