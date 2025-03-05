@@ -26,7 +26,7 @@ class UserScreen(ctk.CTkFrame):
         """Check if the barcode entry has reached a certain length."""
         barcode = self.barcode_entry.get()
         
-        valid_barcode = dm.validate_barcode(self.barcode_entry)
+        valid_barcode = dm.validate_barcode(barcode)
 
         if valid_barcode == barcode:
             self.process_barcode(barcode)
@@ -39,7 +39,7 @@ class UserScreen(ctk.CTkFrame):
         self.ready_label.configure(text=f"Scanned Barcode: {barcode}")
 
         filament_data = dm.decode_barcode(barcode)
-        current_filament_weight = self.get_roll_weight(barcode, ss.load_spreadsheet())
+        current_filament_weight = self.get_current_filament_weight(barcode, ss.load_spreadsheet())
 
         self.filament_data.configure(text='\n'.join(filter(None, [
             filament_data[0],

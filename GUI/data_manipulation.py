@@ -9,17 +9,16 @@ VENDOR_ID = 0x0922
 PRODUCT_ID = 0x8003
 FILAMENT_AMOUNT = 1000
 
-def get_barcode() -> str:
+def validate_barcode(barcode: str) -> str:
     """
-    Prompt the user to scan a barcode and validate it as a 17-digit numeric string.
+    Takes a scanned barcode and validates it as a 17-digit numeric string.
     Returns:
         str: The valid barcode.
     """
-    while True:
-        barcode = input('Ready to scan barcode: ').strip()
-        if len(barcode) == 17 and barcode.isdigit():
-            return barcode
-        print('Invalid barcode. Please scan a valid 16-digit numeric barcode.')
+    if len(barcode) == 17 and barcode.isdigit():
+        return barcode
+    else:
+        return None
 
 def get_starting_weight() -> str:
     """
@@ -131,10 +130,10 @@ def decode_barcode(barcode: str) -> str:
     if len(barcode) != 17:
         raise ValueError("Barcode must be exactly 17 digits long.")
     
-    brand_mapping = load_json('data\\brand_mapping.json')
-    color_mapping = load_json('data\\color_mapping.json')
-    material_mapping = load_json('data\\material_mapping.json')
-    attribute_mapping = load_json('data\\attribute_mapping.json')
+    brand_mapping = load_json('GUI\\data\\brand_mapping.json')
+    color_mapping = load_json('GUI\\data\\color_mapping.json')
+    material_mapping = load_json('GUI\\data\\material_mapping.json')
+    attribute_mapping = load_json('GUI\\data\\attribute_mapping.json')
 
     # Flatten the nested color mapping dynamically
     flat_color_mapping = {}

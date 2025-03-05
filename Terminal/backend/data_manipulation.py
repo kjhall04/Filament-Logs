@@ -48,14 +48,10 @@ def get_starting_weight() -> str:
                 if units == "oz":
                     # Convert ounces to grams
                     weight_grams = round(weight_raw * 28.3495, 2)
-                    print(f'read weight: {weight_grams}')
                     roll_weight = weight_grams - FILAMENT_AMOUNT
-                    print(f'roll weight: {roll_weight}')
                     return f"{roll_weight}", f"{FILAMENT_AMOUNT}"
                 else:
-                    print(f'read weight: {weight_raw}')
                     roll_weight = weight_raw - FILAMENT_AMOUNT
-                    print(f'roll weight: {roll_weight}')
                     return f"{roll_weight}", f"{FILAMENT_AMOUNT}"
 
             time.sleep(0.5)
@@ -115,7 +111,7 @@ def get_roll_weight(barcode: str, sheet) -> float:
     """Retrieve the roll weight from the spreadsheet based on the barcode."""
     for row in sheet.iter_rows(min_row=2, values_only=True):
         if row[1] == barcode:  # Barcode is in the second column
-            return row[-2]    # Roll Weight (g) is the last column
+            return row[-3]    # Roll Weight (g) is the last column
     raise ValueError(f"Roll weight not found for barcode: {barcode}")
 
 def decode_barcode(barcode: str) -> str:

@@ -20,10 +20,10 @@ def generate_filament_barcode(brand: str, color: str, material: str, attribute_1
     Returns:
         str: A 17-digit numeric barcode.
     """
-    brand_mapping = load_json('data\\brand_mapping.json')
-    color_mapping = load_json('data\\color_mapping.json')
-    material_mapping = load_json('data\\material_mapping.json')
-    attribute_mapping = load_json('data\\attribute_mapping.json')
+    brand_mapping = load_json('GUI\\data\\brand_mapping.json')
+    color_mapping = load_json('GUI\\data\\color_mapping.json')
+    material_mapping = load_json('GUI\\data\\material_mapping.json')
+    attribute_mapping = load_json('GUI\\data\\attribute_mapping.json')
 
     # Flatten the nested color mapping dynamically
     flat_color_mapping = {}
