@@ -46,7 +46,7 @@ class FrameManager(ctk.CTk):
         self.show_frame('UserScreen')
 
         # Show the first frame 'Login'
-        self.change_screen = True  # Track current screen
+        self.change_screen = False  # Track current screen
         self.bind('<Control-Shift-A>', self.toggle_screen) 
 
     def add_frame(self, page_class, name):
