@@ -4,7 +4,7 @@ import data_manipulation
 import generate_barcode
 
 # File path for the Excel workbook
-FILE_PATH = 'fiilament_inventory.xlsx'
+FILE_PATH = 'Filament-Logs\\filament_inventory.xlsx'
 
 # Empty threshold for filament detection
 EMPTY_THRESHOLD = 5

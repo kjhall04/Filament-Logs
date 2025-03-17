@@ -10,64 +10,46 @@ class NewRollScreen(ctk.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
 
         self.container = ctk.CTkFrame(self)
-        self.container.grid(row=0, column=0, sticky="nsew", padx=300, pady=80)
+        self.container.grid(row=0, column=0, sticky="nsew", padx=320, pady=60)
 
         self.container.grid_columnconfigure((0, 1), weight=1)
 
-        self.label = ctk.CTkLabel(self.container, text='Add New Filament', font=('Arial', 18))
-        self.label.grid(row=0, column=0, columnspan=4, pady=(10, 20))
+        self.label = ctk.CTkLabel(self.container, text='Add New Filament', font=('Arial', 20))
+        self.label.grid(row=0, column=0, columnspan=4, pady=10)
 
-        # Load JSON data
-        self.brand_mapping = gb.load_json('GUI\\data\\brand_mapping.json')
-        self.color_mapping = gb.load_json('GUI\\data\\color_mapping.json')
-        self.material_mapping = gb.load_json('GUI\\data\\material_mapping.json')
-        self.attribute_mapping = gb.load_json('GUI\\data\\attribute_mapping.json')
-
-        # Flatten nested color mapping dynamically
-        self.flat_color_mapping = {}
-        for category, colors in self.color_mapping.items():
-            if isinstance(colors, dict):
-                self.flat_color_mapping.update(colors)
-            else:
-                self.flat_color_mapping[category] = colors
-
-        # Extract keys (codes) for dropdowns
-        self.brands = list(self.brand_mapping.values())
-        self.colors = list(self.flat_color_mapping.values())
-        self.materials = list(self.material_mapping.values())
-        self.attributes = list(self.attribute_mapping.values())
-
-        self.create_dropdowns()
+        self.create_entry_boxes()
 
         self.confirm_button = ctk.CTkButton(self.container, text='Confirm Infromation', command=self.generate_barcode)
         self.confirm_button.grid(row=7, column=0, columnspan=4, pady=(20, 10))
 
-    def create_dropdowns(self):
-        dropdown_data = [
-            ("Brand:", self.brands),
-            ("Color:", self.colors),
-            ("Material:", self.materials),
-            ("Attribute 1:", self.attributes),
-            ("Attribute 2:", self.attributes),
-            ("Location:", ["Lab", "Storage"])
-        ]
+        self.error_label = ctk.CTkLabel(self.container, text='', text_color='red')
 
-        self.dropdowns = []
+    def create_entry_boxes(self):
+        label_data = ['Brand:', 'Color:', 'Material:', 'Attribute 1:', 'Attribute 2:', 'Location:']
 
-        for row, (label_text, values) in enumerate(dropdown_data, start=1):
+        self.entries = []
+
+        for row, label_text in enumerate(label_data, start=1):
             label = ctk.CTkLabel(self.container, text=label_text)
             label.grid(row=row, column=0, sticky="e", padx=10, pady=5)
 
-            dropdown = ctk.CTkComboBox(self.container, values=values, state="normal", width=160)  # Typable search
-            dropdown.grid(row=row, column=1, sticky="w", padx=10, pady=5)
+            entry = ctk.CTkEntry(self.container, width=160)  # Typable search
+            entry.grid(row=row, column=1, sticky="w", padx=10, pady=5)
 
-            self.dropdowns.append(dropdown)
+            self.entries.append(entry)
 
     def generate_barcode(self):
-        """Generate a barcode based on dropdown selections."""
-        brand, color, material, attribute_1, attribute_2, location = [dropdown.get() for dropdown in self.dropdowns]
+        """Generate a barcode based on typed entries."""
+        brand, color, material, attribute_1, attribute_2, location = [entry.get() for entry in self.entries]
         sheet = ss.load_spreadsheet()
 
         barcode = gb.generate_filament_barcode(brand, color, material, attribute_1, attribute_2, location, sheet)
 
-        self.confirm_button.configure(text=barcode)
+        if barcode.startswith('Invalid'):
+            self.error_label.configure(text=barcode)
+            self.error_label.grid(row=8, column=0, columnspan=4, pady=(20, 10))
+            self.error_label.update_idletasks()
+        else:
+            self.error_label.configure(text='')
+            self.error_label.grid_remove()
+            self.master.show_frame('NewWeightScreen')

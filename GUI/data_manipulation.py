@@ -47,14 +47,10 @@ def get_starting_weight() -> str:
                 if units == "oz":
                     # Convert ounces to grams
                     weight_grams = round(weight_raw * 28.3495, 2)
-                    print(f'read weight: {weight_grams}')
                     roll_weight = weight_grams - FILAMENT_AMOUNT
-                    print(f'roll weight: {roll_weight}')
                     return f"{roll_weight}", f"{FILAMENT_AMOUNT}"
                 else:
-                    print(f'read weight: {weight_raw}')
                     roll_weight = weight_raw - FILAMENT_AMOUNT
-                    print(f'roll weight: {roll_weight}')
                     return f"{roll_weight}", f"{FILAMENT_AMOUNT}"
 
             time.sleep(0.5)

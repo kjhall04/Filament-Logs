@@ -43,17 +43,17 @@ def generate_filament_barcode(brand: str, color: str, material: str, attribute_1
 
     # Validate that the closest matches are found
     if brand_code == "Invalid Brand":
-        raise ValueError(f"Invalid brand: {brand}. Please use a valid brand name.")
+        return f"Invalid brand: {brand}. Please use a valid brand name."
     if color_code == "Invalid Color":
-        raise ValueError(f"Invalid color: {color}. Please use a valid color name.")
+        return f"Invalid color: {color}. Please use a valid color name."
     if material_code == "Invalid Material":
-        raise ValueError(f"Invalid material: {material}. Please use a valid material name.")
+        return f"Invalid material: {material}. Please use a valid material name."
     if attribute_1_code == "Invalid Attribute":
-        raise ValueError(f"Invalid attribute: {attribute_1}. Please use a valid attribute name.")
+        return f"Invalid attribute: {attribute_1}. Please use a valid attribute name."
     if attribute_2_code == "Invalid Attribute":
-        raise ValueError(f"Invalid attribute: {attribute_2}. Please use a valid attribute name.")
+        return f"Invalid attribute: {attribute_2}. Please use a valid attribute name."
     if location_code == "Invalid Location":
-        raise ValueError(f"Invalid Location: {location}. Please use a valid location name")
+        return f"Invalid Location: {location}. Please use a valid location name"
 
     # Extract existing barcodes from the sheet
     barcodes = [row[1].value for row in sheet.iter_rows(min_row=2) if row[1].value]
@@ -101,9 +101,5 @@ def load_json(filename):
     Returns:
         dict: The content of the JSON file.
     """
-    try:
-        with open(filename, 'r') as file:
+    with open(filename, 'r') as file:
             return json.load(file)
-    except FileNotFoundError:
-        print(f"Error: {filename} not found.")
-        return

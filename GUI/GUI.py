@@ -29,8 +29,9 @@ class FrameManager(ctk.CTk):
         # Add all the frames by class and name for reference
         self.add_frame(UserScreen, 'UserScreen')
         self.add_frame(AdminScreen, 'AdminScreen')
-        self.add_frame(UpdateWeightScreen, 'UpdateWeightScreen')
+        self.add_frame(UpdateCurrentWeightScreen, 'UpdateCurrentWeightScreen')
         self.add_frame(NewRollScreen, 'NewRollScreen')
+        self.add_frame(NewWeightScreen, 'NewWeightScreen')
 
         # Debug mode that creates a dropdown to the side of all the different
         # frames to iterate through without running the program properly
@@ -55,10 +56,10 @@ class FrameManager(ctk.CTk):
         self.frames[name] = frame
         frame.grid(row=1, column=0, sticky='nsew')
 
-    def show_frame(self, name):
-        # Show the frame listed
-        frame = self.frames[name]
+    def show_frame(self, frame_name):
+        frame = self.frames[frame_name]
         frame.tkraise()
+
 
     def toggle_screen(self, event=None):
         self.change_screen = not self.change_screen  # Toggle between True/False
