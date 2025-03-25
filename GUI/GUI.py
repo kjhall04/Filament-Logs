@@ -23,6 +23,9 @@ class FrameManager(ctk.CTk):
         self.title_label = ctk.CTkLabel(self, text='-- Filament Inventory --', font=('Arial', 28, 'bold'))
         self.title_label.grid(row=0, column=0, pady=10)
 
+        # Dictionary to store shared data
+        self.shared_data = {}
+
         # Create a dictionary for frames
         self.frames = {}
 
@@ -56,10 +59,10 @@ class FrameManager(ctk.CTk):
         self.frames[name] = frame
         frame.grid(row=1, column=0, sticky='nsew')
 
-    def show_frame(self, frame_name):
-        frame = self.frames[frame_name]
-        frame.tkraise()
-
+    def show_frame(self, frame_name, name=None, data=None):
+        if name:
+            self.shared_data[name] = data
+        self.frames[frame_name].tkraise()
 
     def toggle_screen(self, event=None):
         self.change_screen = not self.change_screen  # Toggle between True/False

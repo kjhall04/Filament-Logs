@@ -20,7 +20,7 @@ class UserScreen(ctk.CTkFrame):
         self.update_weight_button = ctk.CTkButton(
             self.container,
             text='Update Weight',
-            command=lambda: self.master.show_frame('UpdateCurrentWeightScreen')
+            command=lambda: (self.master.show_frame('UpdateCurrentWeightScreen', 'barcode', self.barcode_entry.get()), self.clear_entries())
         )
 
         # Bind the event to check when the content of the entry is modified
@@ -42,8 +42,7 @@ class UserScreen(ctk.CTkFrame):
 
         filament_data = dm.decode_barcode(barcode)
         sheet = ss.load_spreadsheet()
-        print(barcode)
-        print(sheet)
+        
         current_filament_weight = self.get_current_filament_weight(barcode, sheet)
 
         self.filament_data.configure(text='\n'.join(filter(None, [
@@ -63,3 +62,6 @@ class UserScreen(ctk.CTkFrame):
         for row in sheet.iter_rows(min_row=2, values_only=True):
             if row[1] == barcode:
                 return row[-4]
+            
+    def clear_entries(self):
+        self.barcode_entry.delete(0, 'end')

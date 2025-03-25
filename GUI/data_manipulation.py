@@ -32,9 +32,6 @@ def get_starting_weight() -> str:
         device.open(VENDOR_ID, PRODUCT_ID)
         device.set_nonblocking(False)
 
-        print("\n--- Scale Ready ---")
-        input("Press Enter to continue...")
-
         retries = 5
         weight_raw = None
 
@@ -74,9 +71,6 @@ def get_current_weight(roll_weight: str) -> str:
         device = hid.device()
         device.open(VENDOR_ID, PRODUCT_ID)
         device.set_nonblocking(False)
-
-        print("\n--- Scale Ready ---")
-        input("Press Enter to continue...")
 
         retries = 5
         weight_raw = None

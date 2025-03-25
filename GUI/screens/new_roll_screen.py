@@ -19,7 +19,7 @@ class NewRollScreen(ctk.CTkFrame):
 
         self.create_entry_boxes()
 
-        self.confirm_button = ctk.CTkButton(self.container, text='Confirm Infromation', command=self.generate_barcode)
+        self.confirm_button = ctk.CTkButton(self.container, text='Confirm Infromation', command=(self.generate_barcode(), self.clear_entries()))
         self.confirm_button.grid(row=7, column=0, columnspan=4, pady=(20, 10))
 
         self.error_label = ctk.CTkLabel(self.container, text='', text_color='red')
@@ -45,6 +45,8 @@ class NewRollScreen(ctk.CTkFrame):
 
         barcode = gb.generate_filament_barcode(brand, color, material, attribute_1, attribute_2, location, sheet)
 
+        data = barcode, brand, color, material, attribute_1, attribute_2, location, sheet
+
         if barcode.startswith('Invalid'):
             self.error_label.configure(text=barcode)
             self.error_label.grid(row=8, column=0, columnspan=4, pady=(20, 10))
@@ -52,4 +54,8 @@ class NewRollScreen(ctk.CTkFrame):
         else:
             self.error_label.configure(text='')
             self.error_label.grid_remove()
-            self.master.show_frame('NewWeightScreen')
+            self.master.show_frame('NewWeightScreen', 'filament data', data)   
+
+    def clear_entries(self):
+        for entry in self.entries:
+            entry.delete(0, 'end')

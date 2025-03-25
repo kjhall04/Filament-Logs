@@ -118,7 +118,7 @@ def log_full_filament_data():
             print(e)
 
 if __name__ == '__main__':
-    user = 'Admin'
+    user = None
 
     if user == 'Admin':
         log_full_filament_data()
