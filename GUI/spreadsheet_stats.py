@@ -3,6 +3,7 @@ import openpyxl
 FILE_PATH = 'Filament-Logs\\filament_inventory.xlsx'
 
 def load_spreadsheet():
+    """Loads the spreadsheet or creates a new one if not found."""
     try:
         workbook = openpyxl.load_workbook(FILE_PATH)
         sheet = workbook.active

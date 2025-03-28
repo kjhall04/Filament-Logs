@@ -1,5 +1,6 @@
 import customtkinter as ctk
 import data_manipulation as dm
+import log_data as ld
 
 class NewWeightScreen(ctk.CTkFrame):
     def __init__(self, master):
@@ -37,3 +38,28 @@ class NewWeightScreen(ctk.CTkFrame):
         popup = ctk.CTkToplevel(self)
         popup.title("Addition Confirmation")
         popup.geometry("300x100")  # Set popup size
+
+        # filament_data = barcode, brand, color, material, attribute_1, attribute_2, location, sheet
+        filament_data = self.master.shared_data.get('filament_data', None)
+        attributes = " ".join(filter(None, [filament_data[4], filament_data[5]]))
+
+        result = ld.log_full_filament_data(filament_data[0])
+
+        if result:
+            self.error_label.configure(text=result)
+
+        message = f"""
+            Logged
+            Barcode: {filament_data[0]}
+            Brand: {filament_data[1]}
+            Color: {filament_data[2]}
+            Material: {filament_data[3]}
+            Attributes: {attributes}
+            Location: {filament_data[6]}
+        """
+
+        label = ctk.CTkLabel(popup, text=message, font=("Arial", 14))
+        label.pack(pady=20, padx=10)
+
+        # Automatically close the popup after 3 seconds and switch frames
+        self.after(5000, lambda: (popup.destroy(), self.master.show_frame('UserScreen')))

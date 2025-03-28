@@ -28,43 +28,45 @@ class FrameManager(ctk.CTk):
 
         # Create a dictionary for frames
         self.frames = {}
+        self.add_all_frames()
 
-        # Add all the frames by class and name for reference
+        # Debug mode that creates a dropdown to the side of all the different
+        # frames to iterate through without running the program properly
+        self.debug_mode = debug_mode
+        if self.debug_mode:
+           self.create_debug_menu()
+
+        self.show_frame('UserScreen')
+
+        # Show the first frame 'Login'
+        self.change_screen = False  # Track current screen
+        self.bind('<Control-Shift-A>', self.toggle_screen)
+
+    def add_all_frames(self):
+        """Add all frames to the application."""
         self.add_frame(UserScreen, 'UserScreen')
         self.add_frame(AdminScreen, 'AdminScreen')
         self.add_frame(UpdateCurrentWeightScreen, 'UpdateCurrentWeightScreen')
         self.add_frame(NewRollScreen, 'NewRollScreen')
         self.add_frame(NewWeightScreen, 'NewWeightScreen')
 
-        # Debug mode that creates a dropdown to the side of all the different
-        # frames to iterate through without running the program properly
-        self.debug_mode = debug_mode
-        if self.debug_mode:
-            self.frame_selector = ctk.CTkOptionMenu(
-                self,
-                values=list(self.frames.keys()),
-                command=self.show_frame,
-            )
-            self.frame_selector.grid(row=1, column=1, padx=10, pady=10, sticky='e')
-
-        self.show_frame('UserScreen')
-
-        # Show the first frame 'Login'
-        self.change_screen = False  # Track current screen
-        self.bind('<Control-Shift-A>', self.toggle_screen) 
+    def create_debug_menu(self):
+        """Create a dropdown menu for debugging."""
+        self.frame_selector = ctk.CTkOptionMenu(self, values=list(self.frames.keys()), command=self.show_frame)
+        self.frame_selector.grid(row=1, column=1, padx=10, pady=10, sticky='e')
 
     def add_frame(self, page_class, name):
-        # Add frames to dictionary and pass class and name and position when displayed
+        """Add a frame by class and name."""
         frame = page_class(self)
         self.frames[name] = frame
         frame.grid(row=1, column=0, sticky='nsew')
 
-    def show_frame(self, frame_name, name=None, data=None):
-        if name:
-            self.shared_data[name] = data
+    def show_frame(self, frame_name):
+        """Display the specified frame."""
         self.frames[frame_name].tkraise()
 
     def toggle_screen(self, event=None):
+        """Toggle between user and admin screens."""
         self.change_screen = not self.change_screen  # Toggle between True/False
         new_screen = 'AdminScreen' if self.change_screen else 'UserScreen'
         self.show_frame(new_screen)

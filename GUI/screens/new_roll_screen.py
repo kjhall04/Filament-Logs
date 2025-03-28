@@ -19,7 +19,7 @@ class NewRollScreen(ctk.CTkFrame):
 
         self.create_entry_boxes()
 
-        self.confirm_button = ctk.CTkButton(self.container, text='Confirm Infromation', command=(self.generate_barcode(), self.clear_entries()))
+        self.confirm_button = ctk.CTkButton(self.container, text='Confirm Infromation', command=self.confirm_and_clear)
         self.confirm_button.grid(row=7, column=0, columnspan=4, pady=(20, 10))
 
         self.error_label = ctk.CTkLabel(self.container, text='', text_color='red')
@@ -54,8 +54,16 @@ class NewRollScreen(ctk.CTkFrame):
         else:
             self.error_label.configure(text='')
             self.error_label.grid_remove()
-            self.master.show_frame('NewWeightScreen', 'filament data', data)   
+
+            self.master.shared_data['filament_data'] = data
+
+            self.master.show_frame('NewWeightScreen')   
 
     def clear_entries(self):
         for entry in self.entries:
             entry.delete(0, 'end')
+
+    def confirm_and_clear(self):
+        self.generate_barcode()  # Run first
+        if not self.error_label.winfo_ismapped():  # Clear only if there’s no error
+            self.clear_entries()

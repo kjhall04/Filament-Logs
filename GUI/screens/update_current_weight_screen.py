@@ -49,7 +49,7 @@ class UpdateCurrentWeightScreen(ctk.CTkFrame):
             self.error_label.configure(text=result)
 
         message = f"""
-            Updated:
+            Updated
             Barcode: {barcode},
             Brand: {data[0]},
             Color: {data[1]},

@@ -3,28 +3,27 @@ import time
 import data_manipulation as dm
 import generate_barcode as gb
 
-# File path for the Excel workbook
 FILE_PATH = 'Filament-Logs\\filament_inventory.xlsx'
-
-# Empty threshold for filament detection
 EMPTY_THRESHOLD = 5
 
-# Initialize workbook and sheet
-try:
-    workbook = openpyxl.load_workbook(FILE_PATH)
-    sheet = workbook.active
-except FileNotFoundError:
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 
-                  'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty']) # Add headers
+def load_workbook():
+    """Load the existing workbook or create a new one."""
+    try:
+        return openpyxl.load_workbook(FILE_PATH)
+    except FileNotFoundError:
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty']) # Add headers
+        return workbook
+    
+workbook = load_workbook()
+sheet = workbook.active
 
 def log_filament_data(barcode, filament_amount):
     """ Logs filament data including barcode, weight, and updates Excel. """
-    try:
-        # Gather data
-        timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
+    timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
 
+    try:
         # Find and update the existing row
         for row in sheet.iter_rows(min_row=2):
             if row[1].value == barcode:  # Barcode is in the second column
@@ -35,22 +34,20 @@ def log_filament_data(barcode, filament_amount):
                 # Check if roll is empty
                 if int(filament_amount) <= EMPTY_THRESHOLD:
                     row[11].value = 'True'  # Mark as empty in Excel
-
                 break  # Exit loop after finding the barcode
-        
-        # Save Changes
-        workbook.save(FILE_PATH)
+            
+            # Save Changes
+            workbook.save(FILE_PATH)
 
     except Exception as e:
         return f"An error occurred: {e}"
     else:
         return None
 
-def log_full_filament_data():
+def log_full_filament_data(barcode):
     """ Generates new barcodes and logs full rolls of filament. """
     try:
         # Generate barcode
-        barcode = gb.generate_filament_barcode(brand, color, material, attr1, attr2, location, sheet)
         brand, color, material, attr1, attr2, location = dm.decode_barcode(barcode)
 
         # Get filament weight details
