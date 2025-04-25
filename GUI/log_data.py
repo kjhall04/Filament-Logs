@@ -9,12 +9,17 @@ EMPTY_THRESHOLD = 5
 def load_workbook():
     """Load the existing workbook or create a new one."""
     try:
-        return openpyxl.load_workbook(FILE_PATH)
+        workbook = openpyxl.load_workbook(FILE_PATH)
     except FileNotFoundError:
         workbook = openpyxl.Workbook()
         sheet = workbook.active
-        sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty']) # Add headers
-        return workbook
+        sheet.append([
+            'Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 
+            'Attribute 1', 'Attribute 2', 'Filament Amount (g)', 
+            'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty'
+        ])
+        workbook.save(FILE_PATH)  # Save the new workbook
+    return workbook
     
 workbook = load_workbook()
 sheet = workbook.active
