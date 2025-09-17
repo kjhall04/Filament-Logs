@@ -39,3 +39,7 @@ build/
 *.bak
 *.swp
 *.tmp
+
+# GIT files
+.gitattributes
+.gitignore
