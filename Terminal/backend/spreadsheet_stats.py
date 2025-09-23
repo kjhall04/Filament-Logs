@@ -79,7 +79,7 @@ def get_low_or_empty_filaments(sheet=sheet):
         print(f"Filament Amount: {filament['filament_amount']}")
         print("-" * 40)
 
-def empty_rolls(sheet=sheet):
+def get_empty_rolls(sheet=sheet):
     """ Returns the number of empty rolls in the inventory based on popularity and most recent usage. """
     empty_rolls = []
 
@@ -129,6 +129,6 @@ if __name__ == '__main__':
     elif job == 'low':
         get_low_or_empty_filaments()
     elif job == 'empty':
-        empty_rolls()
+        get_empty_rolls()
     else:
         print('Please use one of the correct variable strings to distinguish jobs.')
