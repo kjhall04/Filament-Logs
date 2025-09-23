@@ -10,6 +10,7 @@ A Python-based inventory management system for tracking 3D printer filament roll
 - Modular code for data manipulation and barcode generation
 - Barcode and attribute mapping via JSON files
 - GUI and terminal interfaces
+- Admin/user role support in terminal mode
 
 ## Requirements
 
@@ -51,9 +52,11 @@ Filament-Logs/
 │
 ├── Terminal/
 │   ├── backend/
+│   │   ├── MAIN.py
 │   │   ├── log_data.py
 │   │   ├── data_manipulation.py
-│   │   └── generate_barcode.py
+│   │   ├── generate_barcode.py
+│   │   └── spreadsheet_stats.py
 │   └── data/
 │       ├── brand_mapping.json
 │       ├── color_mapping.json
@@ -80,13 +83,18 @@ python GUI/MAIN.py
 
 ### Terminal
 
-Run the terminal logger:
+Run the terminal menu:
 ```sh
-python Terminal/backend/log_data.py
+python Terminal/backend/MAIN.py
 ```
 
-- To log a new filament roll, use the `log_full_filament_data(barcode)` function.
-- To update an existing roll's usage, use the `log_filament_data(barcode, filament_amount)` function.
+- When prompted, enter `Admin` for admin functions or any other value for user mode.
+- Admins can log new rolls, view stats, and more; users can log filament usage.
+
+### Direct Function Usage
+
+- To log a new filament roll, use the `log_full_filament_data()` function.
+- To update an existing roll's usage, use the `log_filament_data()` function.
 
 ## Configuration
 
@@ -99,6 +107,7 @@ python Terminal/backend/log_data.py
 - The Excel file is created automatically if it does not exist.
 - Make sure to keep the barcode format consistent with your data manipulation logic.
 - The scale integration requires a compatible USB scale (e.g., DYMO M10) and the `hidapi` library.
+- Admin/user role selection is supported in the terminal menu.
 
 ## License
 
