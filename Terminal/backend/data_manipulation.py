@@ -19,7 +19,7 @@ def get_barcode() -> str:
         barcode = input('Ready to scan barcode: ').strip()
         if len(barcode) == 17 and barcode.isdigit():
             return barcode
-        print('Invalid barcode. Please scan a valid 16-digit numeric barcode.')
+        print('Invalid barcode. Please scan a valid 17-digit numeric barcode.')
 
 def get_starting_weight() -> str:
     """

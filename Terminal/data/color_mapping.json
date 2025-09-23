@@ -29,7 +29,8 @@
         "043": "Light Blue",
         "044": "Teal",
         "045": "Aqua Blue",
-        "046": "Sparkle Blue"
+        "046": "Sparkle Blue",
+        "047": "Dark Blue"
     },
     "Green": {
         "061": "Green",
@@ -44,7 +45,8 @@
         "070": "Kelly Green",
         "071": "Chartreuse",
         "072": "Shamrock Green",
-        "073": "Dark Gray Green"
+        "073": "Dark Gray Green",
+        "074": "Dark Green"
     },
     "Yellow": {
         "091": "Yellow",
@@ -82,7 +84,8 @@
         "159": "Plum",
         "160": "Mauve",
         "161": "Periwinkle",
-        "162": "Army Purple"
+        "162": "Army Purple",
+        "163": "Midnight Purple"
     },
     "Pink": {
         "181": "Pink",
@@ -105,7 +108,9 @@
         "218": "Cinnamon",
         "219": "Umber",
         "220": "Bronze",
-        "221": "Army Beige"
+        "221": "Army Beige",
+        "222": "Khaki",
+        "223": "Light Khaki"
     },
     "Black": {
         "241": "Black",
@@ -166,6 +171,7 @@
     },
     "Gradient Colors":{
         "550": "Galaxy Chameleon",
-        "551": "Rainbow Forest"
+        "551": "Rainbow Forest",
+        "552": "Crystal Rainbow Prairie"
     }
 }
