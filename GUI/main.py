@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 import openpyxl
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "backend"))
@@ -10,8 +11,9 @@ from backend import data_manipulation
 from backend import generate_barcode
 from backend import spreadsheet_stats
 
+load_dotenv()
 app = Flask(__name__)
-app.secret_key = "filament_secret"
+app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
 EXCEL_PATH = os.path.join(os.path.dirname(__file__), "..", "filament_inventory.xlsx")
 
@@ -29,21 +31,15 @@ def get_sheet():
 def index():
     wb, sheet = get_sheet()
     filaments = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
-    filaments.reverse()  # Show most recent first
-    # Pagination
-    page = int(request.args.get("page", 1))
-    per_page = 20
-    total = len(filaments)
-    pages = (total + per_page - 1) // per_page
-    start = (page - 1) * per_page
-    end = start + per_page
-    filaments_page = filaments[start:end]
+    # Sort by timestamp (first column), descending
+    filaments.sort(
+        key=lambda x: datetime.strptime(str(x[0]), "%Y-%m-%d %H:%M:%S") if x[0] else datetime.min,
+        reverse=True
+    )
     return render_template(
         "index.html",
-        filaments=filaments_page,
-        page=page,
-        pages=pages,
-        total=total
+        filaments=filaments,
+        total=len(filaments)
     )
 
 @app.route("/popular")
