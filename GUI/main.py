@@ -7,15 +7,16 @@ from dotenv import load_dotenv
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), "backend"))
 
-from backend import data_manipulation
-from backend import generate_barcode
 from backend import spreadsheet_stats
+from backend import log_data
+from backend import generate_barcode
+from backend import data_manipulation
 
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
-EXCEL_PATH = os.path.join(os.path.dirname(__file__), "..", "filament_inventory.xlsx")
+EXCEL_PATH = r"C:\Users\LichKing\Desktop\Programming\Filament-Logs\filament_inventory.xlsx"
 
 def get_sheet():
     if not os.path.exists(EXCEL_PATH):
@@ -65,81 +66,82 @@ def log_filament():
     if request.method == "POST":
         barcode = request.form["barcode"]
         weight = request.form["weight"]
-        brand = request.form.get("brand", "")
-        color = request.form.get("color", "")
-        material = request.form.get("material", "")
-        attribute_1 = request.form.get("attribute_1", "")
-        attribute_2 = request.form.get("attribute_2", "")
-        location = request.form.get("location", "")
-        roll_weight = request.form.get("roll_weight", "")
-        times_logged_out = request.form.get("times_logged_out", "1")
-
-        # Validate barcode using your function (pass barcode to function)
-        if not data_manipulation.decode_barcode(barcode):
-            flash("Invalid barcode!", "danger")
-            return redirect(url_for("log_filament"))
-
-        # Optionally, get current weight from scale if needed
-        # current_weight = data_manipulation.get_current_weight(roll_weight)
-
-        wb, sheet = get_sheet()
-        sheet.append([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            barcode,
-            brand,
-            color,
-            material,
-            attribute_1,
-            attribute_2,
-            weight,
-            location,
-            roll_weight,
-            times_logged_out,
-            "False"
-        ])
-        wb.save(EXCEL_PATH)
+        roll_weight = request.form.get("roll_weight", "0")
+        # Use data_manipulation to decode barcode and get roll weight
+        brand, color, material, attr1, attr2, location = data_manipulation.decode_barcode(barcode)
+        roll_weight_val = data_manipulation.get_roll_weight(barcode, get_sheet()[1])
+        filament_amount = int(weight) - int(roll_weight_val)
+        result = log_data.log_filament_data_web(barcode, filament_amount, roll_weight_val)
         flash("Filament usage logged successfully!", "success")
-        return redirect(url_for("index"))
+        return redirect(url_for("index")) 
     return render_template("log.html")
 
 @app.route("/new_roll", methods=["GET", "POST"])
 def new_roll():
-    if request.method == "POST":
-        wb, sheet = get_sheet()
-        # Prompt for info (simulate by getting from form)
+    wb, sheet = get_sheet()
+    # Step 1: Enter filament info and generate barcode
+    if request.method == "POST" and "step" not in request.form:
         brand = request.form.get("brand", "")
         color = request.form.get("color", "")
         material = request.form.get("material", "")
-        attribute_1 = request.form.get("attribute_1", "")
-        attribute_2 = request.form.get("attribute_2", "")
+        attr1 = request.form.get("attribute_1", "")
+        attr2 = request.form.get("attribute_2", "")
         location = request.form.get("location", "")
 
-        # Generate barcode using your function
+        # Generate barcode
         barcode = generate_barcode.generate_filament_barcode(
-            brand, color, material, attribute_1, attribute_2, location, sheet
+            brand, color, material, attr1, attr2, location, sheet
         )
 
-        # Get starting weight from scale (simulate or use actual function)
-        starting_weight = data_manipulation.get_starting_weight()
+        # Read weight from scale using data_manipulation
+        scale_weight = None
+        try:
+            scale_weight, _ = data_manipulation.get_starting_weight()
+        except Exception:
+            scale_weight = ""
 
+        # Show barcode and prompt for current weight (pre-fill from scale)
+        return render_template(
+            "new_roll.html",
+            barcode=barcode,
+            brand=brand,
+            color=color,
+            material=material,
+            attribute_1=attr1,
+            attribute_2=attr2,
+            location=location,
+            scale_weight=scale_weight,
+            step="weight"
+        )
+
+    # Step 2: Enter current weight after barcode is generated
+    if request.method == "POST" and request.form.get("step") == "weight":
+        brand = request.form.get("brand", "")
+        color = request.form.get("color", "")
+        material = request.form.get("material", "")
+        attr1 = request.form.get("attribute_1", "")
+        attr2 = request.form.get("attribute_2", "")
+        location = request.form.get("location", "")
+        barcode = request.form.get("barcode", "")
+        starting_weight = int(request.form.get("weight", ""))
+
+        # Calculate roll weight for new roll
+        FILAMENT_AMOUNT = data_manipulation.FILAMENT_AMOUNT  # e.g., 1000
+        roll_weight = starting_weight - FILAMENT_AMOUNT
+        filament_amount = starting_weight - roll_weight  # Should be FILAMENT_AMOUNT
+
+        # Log to spreadsheet
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         sheet.append([
-            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            barcode,
-            brand,
-            color,
-            material,
-            attribute_1,
-            attribute_2,
-            starting_weight,
-            location,
-            starting_weight,
-            "0",
-            "False"
+            timestamp, barcode, brand, color, material, attr1, attr2,
+            filament_amount, location, roll_weight, '0', 'False'
         ])
         wb.save(EXCEL_PATH)
-        flash(f"New filament roll added! Barcode: {barcode}, Starting Weight: {starting_weight}", "success")
+        flash(f"New filament roll added! Barcode: {barcode}, Filament Amount: {filament_amount}", "success")
         return redirect(url_for("index"))
-    return render_template("new_roll.html")
+
+    # Initial GET: show info form
+    return render_template("new_roll.html", step="info")
 
 if __name__ == "__main__":
     app.run(debug=True)

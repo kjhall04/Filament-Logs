@@ -1,7 +1,7 @@
 import openpyxl
 import datetime
 
-FILE_PATH = 'filament_inventory.xlsx'
+FILE_PATH = r"C:\Users\LichKing\Desktop\Programming\Filament-Logs\filament_inventory.xlsx"
 
 workbook = openpyxl.load_workbook(FILE_PATH)
 sheet = workbook.active

@@ -33,9 +33,6 @@ def get_starting_weight() -> str:
         device.open(VENDOR_ID, PRODUCT_ID)
         device.set_nonblocking(False)
 
-        print("\n--- Scale Ready ---")
-        input("Press Enter to continue...")
-
         retries = 5
         weight_raw = None
 
@@ -57,12 +54,15 @@ def get_starting_weight() -> str:
             time.sleep(0.5)
 
         if weight_raw is None:
-            return "Failed to read weight. Please try again."
+            return False
 
     except Exception as e:
         return f"Error: {e}"
     finally:
-        device.close()
+        try:
+            device.close()
+        except Exception:
+            pass
 
 def get_current_weight(roll_weight: str) -> str:
     """
@@ -75,9 +75,6 @@ def get_current_weight(roll_weight: str) -> str:
         device = hid.device()
         device.open(VENDOR_ID, PRODUCT_ID)
         device.set_nonblocking(False)
-
-        print("\n--- Scale Ready ---")
-        input("Press Enter to continue...")
 
         retries = 5
         weight_raw = None
@@ -105,7 +102,10 @@ def get_current_weight(roll_weight: str) -> str:
     except Exception as e:
         return f"Error: {e}"
     finally:
-        device.close()
+        try:
+            device.close()
+        except Exception:
+            pass
 
 def get_roll_weight(barcode: str, sheet) -> float:
     """Retrieve the roll weight from the spreadsheet based on the barcode."""
@@ -127,10 +127,10 @@ def decode_barcode(barcode: str) -> str:
     if len(barcode) != 17:
         raise ValueError("Barcode must be exactly 17 digits long.")
     
-    brand_mapping = load_json('Terminal\\data\\brand_mapping.json')
-    color_mapping = load_json('Termianl\\data\\color_mapping.json')
-    material_mapping = load_json('Terminal\\data\\material_mapping.json')
-    attribute_mapping = load_json('Terminal\\data\\attribute_mapping.json')
+    brand_mapping = load_json('GUI\\data\\brand_mapping.json')
+    color_mapping = load_json('GUI\\data\\color_mapping.json')
+    material_mapping = load_json('GUI\\data\\material_mapping.json')
+    attribute_mapping = load_json('GUI\\data\\attribute_mapping.json')
 
     # Flatten the nested color mapping dynamically
     flat_color_mapping = {}
@@ -157,8 +157,6 @@ def decode_barcode(barcode: str) -> str:
     location = 'Lab' if location_code == '0' else 'Storage'
 
     return brand, color, material, attr1, attr2, location
-
-import difflib
 
 def get_closest_match(code, mapping, default):
     """
