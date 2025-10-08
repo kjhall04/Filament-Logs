@@ -23,7 +23,8 @@ def get_sheet():
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2', 
-                   'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty'])
+                   'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty', 
+                   'Is Favorite'])
         wb.save(EXCEL_PATH)
     wb = openpyxl.load_workbook(EXCEL_PATH)
     return wb, wb.active
@@ -37,10 +38,13 @@ def index():
         key=lambda x: datetime.strptime(str(x[0]), "%Y-%m-%d %H:%M:%S") if x[0] else datetime.min,
         reverse=True
     )
+    # Build favorites list
+    favorite_barcodes = [f[1] for f in filaments if len(f) > 12 and str(f[12]).lower() == "true"]
     return render_template(
         "index.html",
         filaments=filaments,
-        total=len(filaments)
+        total=len(filaments),
+        favorite_barcodes=favorite_barcodes
     )
 
 @app.route("/popular")
@@ -142,6 +146,18 @@ def new_roll():
 
     # Initial GET: show info form
     return render_template("new_roll.html", step="info")
+
+@app.route("/toggle_favorite", methods=["POST"])
+def toggle_favorite():
+    barcode = request.json.get("barcode")
+    wb, sheet = get_sheet()
+    for row in sheet.iter_rows(min_row=2):
+        if str(row[1].value) == barcode:
+            current = str(row[12].value).lower() if row[12].value else "false"
+            row[12].value = "False" if current == "true" else "True"
+            break
+    wb.save(EXCEL_PATH)
+    return '', 204
 
 if __name__ == "__main__":
     app.run(debug=True)

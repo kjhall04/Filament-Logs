@@ -14,15 +14,19 @@
 </head>
 <body>
 <div class="container mt-4">
-    <h1 class="mb-4">Low/Empty Filaments</h1>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="mb-0">Low/Empty Filaments</h1>
+        <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
+    </div>
     <div class="mb-3 d-flex justify-content-between align-items-center">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary mb-3">Back to Inventory</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
         <input type="text" id="searchInput" class="form-control search-bar" placeholder="Search...">
     </div>
     <hr>
     <table class="table table-striped">
         <thead>
             <tr>
+                <th style="width:40px;"></th>
                 <th>Brand</th>
                 <th>Color</th>
                 <th>Material</th>
@@ -34,6 +38,11 @@
         <tbody>
             {% for filament in filaments %}
             <tr>
+                <td style="text-align:center; vertical-align:middle;">
+                    {% if filament.is_favorite and filament.is_favorite|lower == 'true' %}
+                        <span style="color:gold; font-size:2rem; line-height:1; display:inline-flex; align-items:center; justify-content:center;">&#9733;</span>
+                    {% endif %}
+                </td>
                 <td>{{ filament.brand if filament.brand is not none else '' }}</td>
                 <td>{{ filament.color if filament.color is not none else '' }}</td>
                 <td>{{ filament.material if filament.material is not none else '' }}</td>
@@ -53,11 +62,17 @@
         let rows = document.querySelectorAll('table tbody tr');
         rows.forEach(row => {
             let match = false;
-            row.querySelectorAll('td').forEach(cell => {
-                if (cell.textContent.toLowerCase().includes(filter)) {
-                    match = true;
-                }
-            });
+            if (filter === "favorite") {
+                // Show only rows with a gold star
+                const star = row.querySelector('td span');
+                match = star && star.style.color === "gold";
+            } else {
+                row.querySelectorAll('td').forEach(cell => {
+                    if (cell.textContent.toLowerCase().includes(filter)) {
+                        match = true;
+                    }
+                });
+            }
             row.style.display = match ? '' : 'none';
         });
     });

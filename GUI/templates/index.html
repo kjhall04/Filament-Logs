@@ -15,14 +15,17 @@
 </head>
 <body>
 <div class="container mt-4">
-    <h1 class="mb-4">Filament Inventory</h1>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="mb-0" style="font-size: 60px;">Filament Inventory</h1>
+        <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
+    </div>
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <div>
             <a href="{{ url_for('log_filament') }}" class="btn btn-primary me-2">Log Filament Usage</a>
             <a href="{{ url_for('new_roll') }}" class="btn btn-success me-2">Add New Filament Roll</a>
             <a href="{{ url_for('popular_filaments') }}" class="btn btn-info me-2">Most Popular Filaments</a>
             <a href="{{ url_for('low_empty_filaments') }}" class="btn btn-warning me-2">Low/Empty Filaments</a>
-            <a href="{{ url_for('empty_rolls') }}" class="btn btn-danger">Empty Rolls</a>
+            <a href="{{ url_for('empty_rolls') }}" class="btn btn-danger me-2">Empty Rolls</a>
         </div>
         <input type="text" id="searchInput" class="form-control search-bar" placeholder="Search...">
     </div>
@@ -37,10 +40,17 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+    {% set favorite_barcodes = [] %}
+    {% for filament in filaments %}
+        {% if filament|length > 12 and filament[12] == 'True' %}
+            {% set _ = favorite_barcodes.append(filament[1]) %}
+        {% endif %}
+    {% endfor %}
     <div class="table-responsive">
         <table class="table table-striped" id="filamentTable">
             <thead>
                 <tr>
+                    <th style="width:40px;"></th> <!-- Star column -->
                     <th style="white-space:nowrap;">Timestamp</th>
                     <th style="white-space:nowrap;">Barcode</th>
                     <th style="white-space:nowrap;">Brand</th>
@@ -58,9 +68,28 @@
             <tbody>
                 {% for filament in filaments %}
                 <tr>
-                    {% for item in filament %}
-                    <td>{{ item if item is not none else '' }}</td>
-                    {% endfor %}
+                    <td>
+                        <button class="favorite-btn" data-barcode="{{ filament[1] }}" style="background:none; border:none; padding:0; cursor:pointer;">
+                            {% if filament|length > 12 and filament[12]|lower == 'true' %}
+                                <span style="color:gold; font-size:2rem;">&#9733;</span>
+                            {% else %}
+                                <span style="color:lightgray; font-size:2rem;">&#9734;</span>
+                            {% endif %}
+                        </button>
+                    </td>
+                    <td>{{ filament[0] if filament[0] is not none else '' }}</td>
+                    <td>{{ filament[1] if filament[1] is not none else '' }}</td>
+                    <td>{{ filament[2] if filament[2] is not none else '' }}</td>
+                    <td>{{ filament[3] if filament[3] is not none else '' }}</td>
+                    <td>{{ filament[4] if filament[4] is not none else '' }}</td>
+                    <td>{{ filament[5] if filament[5] is not none else '' }}</td>
+                    <td>{{ filament[6] if filament[6] is not none else '' }}</td>
+                    <td>{{ filament[7] if filament[7] is not none else '' }}</td>
+                    <td>{{ filament[8] if filament[8] is not none else '' }}</td>
+                    <td>{{ filament[9] if filament[9] is not none else '' }}</td>
+                    <td>{{ filament[10] if filament[10] is not none else '' }}</td>
+                    <td>{{ filament[11] if filament[11] is not none else '' }}</td>
+                    <!-- Do NOT display filament[12] (Is Favorite) -->
                 </tr>
                 {% endfor %}
             </tbody>
@@ -118,6 +147,11 @@
     document.getElementById('searchInput').addEventListener('input', function() {
         let filter = this.value.trim().toLowerCase();
         filteredRows = rows.filter(row => {
+            if (filter === "favorite") {
+                // Show only rows with a gold star (favorite)
+                const star = row.querySelector('.favorite-btn span');
+                return star && star.style.color === "gold";
+            }
             return Array.from(row.querySelectorAll('td')).some(cell =>
                 cell.textContent.toLowerCase().includes(filter)
             );
@@ -130,6 +164,22 @@
 
     // Make showPage globally accessible for pagination links
     window.showPage = showPage;
+
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const barcode = this.getAttribute('data-barcode');
+            fetch('{{ url_for("toggle_favorite") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ barcode: barcode })
+            }).then(() => {
+                location.reload();
+            });
+        });
+    });
 </script>
 </body>
 </html>

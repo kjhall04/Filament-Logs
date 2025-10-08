@@ -16,7 +16,8 @@ def get_workbook_and_sheet():
         workbook = openpyxl.Workbook()
         sheet = workbook.active
         sheet.append(['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2',
-                      'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty'])
+                      'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty',
+                      'Is Favorite'])
         workbook.save(FILE_PATH)
     workbook = openpyxl.load_workbook(FILE_PATH)
     sheet = workbook.active
@@ -68,6 +69,3 @@ def log_full_filament_data_web(brand, color, material, attr1, attr2, location, s
         "location": location,
         "roll_weight": roll_weight
     }
-
-if __name__ == "__main__":
-    print(FILE_PATH)

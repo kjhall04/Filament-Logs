@@ -13,10 +13,13 @@
 </head>
 <body>
 <div class="container mt-4">
-    <h1 class="mb-4">Log Filament Usage</h1>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="mb-0">Log Filament Usage</h1>
+        <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
+    </div>
     <form method="post">
-        <button type="submit" class="btn btn-primary">Log Usage</button>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back</a>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
+        <button type="submit" class="btn btn-primary me-2">Log Usage</button>
         <hr>
         <div class="mb-3">
             <label for="barcode" class="form-label">Barcode</label>

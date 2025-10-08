@@ -13,11 +13,14 @@
 </head>
 <body>
 <div class="container mt-4">
-    <h1 class="mb-4">Add New Filament Roll</h1>
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="mb-0">Add New Filament Roll</h1>
+        <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
+    </div>
     {% if step == "info" %}
     <div class="mb-3 d-flex gap-2">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-        <button type="submit" form="infoForm" class="btn btn-success">Generate Barcode</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
+        <button type="submit" form="infoForm" class="btn btn-success me-2">Generate Barcode</button>
     </div>
     <hr>
     <form method="post" id="infoForm">
@@ -30,8 +33,8 @@
     </form>
     {% elif step == "weight" %}
     <div class="mb-3 d-flex gap-2">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-        <button type="submit" form="weightForm" class="btn btn-primary">Submit Weight</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
+        <button type="submit" form="weightForm" class="btn btn-primary me-2">Submit Weight</button>
     </div>
     <hr>
     <div class="alert alert-info mb-3">

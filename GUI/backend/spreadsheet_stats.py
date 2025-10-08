@@ -19,6 +19,7 @@ def get_most_popular_filaments(sheet=sheet, top_n=10):
         attribute_2 = row[6].value if row[6].value else None
         times_logged_out = int(row[10].value) if row[10].value else 0
         weight = row[7].value if row[7].value else None
+        favorite = str(row[12].value).lower() if len(row) > 12 and row[12].value else 'false'
 
         popular_filaments.append({
             'brand': brand,
@@ -27,7 +28,8 @@ def get_most_popular_filaments(sheet=sheet, top_n=10):
             'attribute_1': attribute_1,
             'attribute_2': attribute_2,
             'times_logged_out': times_logged_out,
-            'weight': weight  # <-- Add this key
+            'weight': weight,
+            'is_favorite': favorite
         })
 
     # Sort by "Times Logged Out" in descending order
@@ -49,6 +51,7 @@ def get_low_or_empty_filaments(sheet=sheet):
         filament_amount = row[7].value  # "Times Logged Out" column
         is_empty = str(row[11].value).lower()  # Normalize to lowercase
         weight = row[7].value if row[7].value else None
+        favorite = str(row[12].value).lower() if len(row) > 12 and row[12].value else 'false'
 
         # If the filament is not empty, consider it in the ranking
         if is_empty == 'true' or float(filament_amount) < 250:
@@ -58,7 +61,8 @@ def get_low_or_empty_filaments(sheet=sheet):
                 'material': material,
                 'attribute_1': attribute_1,
                 'attribute_2': attribute_2,
-                'weight': weight
+                'weight': weight,
+                'is_favorite': favorite
             })
     
     return low_or_empty_filaments
@@ -77,6 +81,7 @@ def get_empty_rolls(sheet=sheet):
         attribute_2 = row[6].value if row[6].value else None
         times_logged_out = int(row[10].value)  # "Times Logged Out" column
         is_empty = str(row[11].value).lower()  # Normalize to lowercase
+        favorite = str(row[12].value).lower() if len(row) > 12 and row[12].value else 'false'
 
         # If the filament is not empty, consider it in the ranking
         if is_empty == 'true':
@@ -87,24 +92,11 @@ def get_empty_rolls(sheet=sheet):
                 'attribute_1': attribute_1,
                 'attribute_2': attribute_2,
                 'times_logged_out': times_logged_out,
-                'last_logged': last_logged
+                'last_logged': last_logged,
+                'is_favorite': favorite
             })
 
     # Sort by "Times Logged Out" in descending order
     empty_rolls.sort(key=lambda x: datetime.datetime.strptime(x['last_logged'], "%Y-%m-%d %H:%M:%S"), reverse=True)
 
     return empty_rolls
-
-if __name__ == '__main__':
-
-    # 'popular' or 'low'
-    job = 'empty'
-
-    if job == 'popular':
-        get_most_popular_filaments()
-    elif job == 'low':
-        get_low_or_empty_filaments()
-    elif job == 'empty':
-        get_empty_rolls()
-    else:
-        print('Please use one of the correct variable strings to distinguish jobs.')
