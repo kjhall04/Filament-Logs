@@ -1,15 +1,16 @@
 # Filament Logs
 
-A Python-based inventory management system for tracking 3D printer filament rolls. This project uses Excel files for data storage and provides utilities for logging filament usage, generating barcodes, and managing inventory. It includes a modern Flask web application and terminal-based tools.
+A Python-based inventory management system for tracking 3D printer filament rolls. This project uses Excel files for data storage and provides utilities for logging filament usage, generating barcodes, managing favorites, and tracking inventory. It includes a modern Flask web application and terminal-based tools.
 
 ## Features
 
 - Log filament usage and update inventory in an Excel file
 - Add new filament rolls with automatic barcode generation
 - Mark rolls as empty based on a configurable threshold
+- Mark and display favorite filament rolls (with gold stars in the web app)
 - Modular code for data manipulation and barcode generation
 - Barcode and attribute mapping via JSON files
-- Modern web interface (Flask) with search, pagination, and stats pages
+- Modern web interface (Flask) with search, pagination, favorites, and stats pages
 - Terminal interface for command-line usage
 - USB barcode scanner and scale integration (if supported by hardware)
 
@@ -44,6 +45,8 @@ Filament-Logs/
 │   │   ├── color_mapping.json
 │   │   ├── material_mapping.json
 │   │   └── attribute_mapping.json
+│   └── static/
+│       └── MakerCampus_Logo.jpg
 │   └── templates/
 │       ├── index.html
 │       ├── log.html
@@ -68,7 +71,6 @@ Filament-Logs/
 ├── filament_inventory.xlsx  # (auto-generated)
 └── README.md
 ```
-
 ## Usage
 
 ### Web Application (Recommended)
@@ -77,8 +79,9 @@ Run the Flask web app:
 ```sh
 python GUI/MAIN.py
 ```
-- Access the inventory, log usage, add new rolls, and view stats in your browser.
+- Access the inventory, log usage, add new rolls, mark favorites, and view stats in your browser.
 - Use the search bar and pagination to quickly find filament rolls.
+- Search for "favorite" to filter and display only favorite rolls (gold stars).
 - Barcode scanner input works in focused fields; scale integration is available if supported.
 
 ### Terminal
@@ -108,9 +111,6 @@ python Terminal/backend/MAIN.py
 - Make sure to keep the barcode format consistent with your data manipulation logic.
 - The scale integration requires a compatible USB scale (e.g., DYMO M10) and the `hidapi` library.
 - Admin/user role selection is supported in the terminal menu.
-- The web app provides dynamic search and pagination for all inventory and stats pages.
+- The web app provides dynamic search, pagination, and favorite marking for all inventory and stats pages.
 - All templates display empty cells instead of `None`.
-
-## License
-
-MIT License
+- Favorite rolls are visually indicated with gold stars in the web app.
