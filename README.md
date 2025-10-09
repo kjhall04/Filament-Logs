@@ -45,8 +45,8 @@ Filament-Logs/
 │   │   ├── color_mapping.json
 │   │   ├── material_mapping.json
 │   │   └── attribute_mapping.json
-│   └── static/
-│       └── MakerCampus_Logo.jpg
+│   ├── static/
+│   │   └── MakerCampus_Logo.jpg
 │   └── templates/
 │       ├── index.html
 │       ├── log.html
