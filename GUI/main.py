@@ -159,5 +159,23 @@ def toggle_favorite():
     wb.save(EXCEL_PATH)
     return '', 204
 
+@app.route("/favorites")
+def favorites():
+    wb, sheet = get_sheet()
+    filaments = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
+    unique_favorites = {}
+    for f in filaments:
+        if len(f) > 12 and str(f[12]).lower() == "true":
+            key = (f[2], f[3], f[4], f[5], f[6])  # Brand, Color, Material, Attr1, Attr2
+            if key not in unique_favorites:
+                unique_favorites[key] = {
+                    "brand": f[2],
+                    "color": f[3],
+                    "material": f[4],
+                    "attribute_1": f[5],
+                    "attribute_2": f[6]
+                }
+    return render_template("favorites.html", favorites=list(unique_favorites.values()))
+
 if __name__ == "__main__":
     app.run(debug=True)
