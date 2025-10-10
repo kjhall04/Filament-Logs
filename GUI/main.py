@@ -168,12 +168,16 @@ def favorites():
         if len(f) > 12 and str(f[12]).lower() == "true":
             key = (f[2], f[3], f[4], f[5], f[6])  # Brand, Color, Material, Attr1, Attr2
             if key not in unique_favorites:
+                # Build Amazon search URL
+                query = " ".join([str(f[2]), str(f[3]), str(f[4]), str(f[5]) if f[5] is not None else "", str(f[6]) if f[6] is not None else "", "filament"])
+                amazon_url = "https://www.amazon.com/s?k=" + "+".join(query.split())
                 unique_favorites[key] = {
                     "brand": f[2],
                     "color": f[3],
                     "material": f[4],
                     "attribute_1": f[5],
-                    "attribute_2": f[6]
+                    "attribute_2": f[6],
+                    "amazon_url": amazon_url
                 }
     return render_template("favorites.html", favorites=list(unique_favorites.values()))
 
