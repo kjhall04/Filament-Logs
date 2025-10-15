@@ -4,9 +4,6 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), "backend"))
-
 from backend import spreadsheet_stats
 from backend import log_data
 from backend import generate_barcode
@@ -50,19 +47,19 @@ def index():
 @app.route("/popular")
 def popular_filaments():
     wb, sheet = get_sheet()
-    popular = spreadsheet_stats.get_most_popular_filaments(sheet)
+    popular = spreadsheet_stats.get_most_popular_filaments()
     return render_template("popular.html", filaments=popular)
 
 @app.route("/low_empty")
 def low_empty_filaments():
     wb, sheet = get_sheet()
-    low_empty = spreadsheet_stats.get_low_or_empty_filaments(sheet)
+    low_empty = spreadsheet_stats.get_low_or_empty_filaments()
     return render_template("low_empty.html", filaments=low_empty)
 
 @app.route("/empty_rolls")
 def empty_rolls():
     wb, sheet = get_sheet()
-    empty = spreadsheet_stats.get_empty_rolls(sheet)
+    empty = spreadsheet_stats.get_empty_rolls()
     return render_template("empty_rolls.html", rolls=empty)
 
 @app.route("/log", methods=["GET", "POST"])
@@ -70,9 +67,6 @@ def log_filament():
     if request.method == "POST":
         barcode = request.form["barcode"]
         weight = request.form["weight"]
-        roll_weight = request.form.get("roll_weight", "0")
-        # Use data_manipulation to decode barcode and get roll weight
-        brand, color, material, attr1, attr2, location = data_manipulation.decode_barcode(barcode)
         roll_weight_val = data_manipulation.get_roll_weight(barcode, get_sheet()[1])
         filament_amount = int(weight) - int(roll_weight_val)
         result = log_data.log_filament_data_web(barcode, filament_amount, roll_weight_val)
@@ -134,11 +128,11 @@ def new_roll():
         roll_weight = starting_weight - FILAMENT_AMOUNT
         filament_amount = starting_weight - roll_weight  # Should be FILAMENT_AMOUNT
 
-        # Log to spreadsheet
+        # Log to spreadsheet (include Is Favorite field as last column)
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         sheet.append([
             timestamp, barcode, brand, color, material, attr1, attr2,
-            filament_amount, location, roll_weight, '0', 'False'
+            filament_amount, location, roll_weight, '0', 'False', 'False'
         ])
         wb.save(EXCEL_PATH)
         flash(f"New filament roll added! Barcode: {barcode}, Filament Amount: {filament_amount}", "success")
