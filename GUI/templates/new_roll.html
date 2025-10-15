@@ -23,13 +23,37 @@
         <button type="submit" form="infoForm" class="btn btn-success me-2">Generate Barcode</button>
     </div>
     <hr>
-    <form method="post" id="infoForm">
-        <div class="mb-3"><label>Brand</label><input type="text" name="brand" class="form-control" required></div>
-        <div class="mb-3"><label>Color</label><input type="text" name="color" class="form-control" required></div>
-        <div class="mb-3"><label>Material</label><input type="text" name="material" class="form-control" required></div>
-        <div class="mb-3"><label>Attribute 1</label><input type="text" name="attribute_1" class="form-control"></div>
-        <div class="mb-3"><label>Attribute 2</label><input type="text" name="attribute_2" class="form-control"></div>
-        <div class="mb-3"><label>Location</label><input type="text" name="location" class="form-control"></div>
+    <form method="post" id="infoForm" autocomplete="off" novalidate>
+        <div class="mb-3">
+            <label>Brand</label>
+            <input type="text" name="brand" class="form-control" required autocomplete="off">
+            <small class="form-text text-muted">Brand of the filament.</small>
+        </div>
+        <div class="mb-3">
+            <label>Color</label>
+            <input type="text" name="color" class="form-control" required autocomplete="off">
+            <small class="form-text text-muted">Color of the filament.</small>
+        </div>
+        <div class="mb-3">
+            <label>Material</label>
+            <input type="text" name="material" class="form-control" required autocomplete="off">
+            <small class="form-text text-muted">Material type (e.g., PLA, ABS).</small>
+        </div>
+        <div class="mb-3">
+            <label>Attribute 1</label>
+            <input type="text" name="attribute_1" class="form-control" autocomplete="off">
+            <small class="form-text text-muted">Additional attribute information.</small>
+        </div>
+        <div class="mb-3">
+            <label>Attribute 2</label>
+            <input type="text" name="attribute_2" class="form-control" autocomplete="off">
+            <small class="form-text text-muted">Additional attribute information.</small>
+        </div>
+        <div class="mb-3">
+            <label>Location</label>
+            <input type="text" name="location" class="form-control" autocomplete="off">
+            <small class="form-text text-muted">Location of the filament roll (Lab or Storage).</small>
+        </div>
     </form>
     {% elif step == "weight" %}
     <div class="mb-3 d-flex gap-2">
@@ -40,19 +64,20 @@
     <div class="alert alert-info mb-3">
         <strong>Barcode:</strong> {{ barcode }}
     </div>
-    <form method="post" id="weightForm">
-        <input type="hidden" name="step" value="weight">
-        <input type="hidden" name="brand" value="{{ brand }}">
-        <input type="hidden" name="color" value="{{ color }}">
-        <input type="hidden" name="material" value="{{ material }}">
-        <input type="hidden" name="attribute_1" value="{{ attribute_1 }}">
-        <input type="hidden" name="attribute_2" value="{{ attribute_2 }}">
-        <input type="hidden" name="location" value="{{ location }}">
+    <form method="post" id="weightForm" autocomplete="off" novalidate>
+        <input type="hidden" name="step" value="weight" autocomplete="off">
+        <input type="hidden" name="brand" value="{{ brand }}" autocomplete="off">
+        <input type="hidden" name="color" value="{{ color }}" autocomplete="off">
+        <input type="hidden" name="material" value="{{ material }}" autocomplete="off">
+        <input type="hidden" name="attribute_1" value="{{ attribute_1 }}" autocomplete="off">
+        <input type="hidden" name="attribute_2" value="{{ attribute_2 }}" autocomplete="off">
+        <input type="hidden" name="location" value="{{ location }}" autocomplete="off">
         <input type="hidden" name="barcode" value="{{ barcode }}">
+
         <div class="mb-3">
             <label>Current Weight (g)</label>
             <input type="number" name="weight" class="form-control" required value="{{ scale_weight }}">
-            <small class="form-text text-muted">Measured from scale. You may adjust if needed.</small>
+            <small class="form-text text-muted">Enter weight in grams shown on the scale.</small>
         </div>
         <!-- The Get Weight button is now at the top -->
     </form>
