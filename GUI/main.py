@@ -156,23 +156,63 @@ def toggle_favorite():
 @app.route("/favorites")
 def favorites():
     wb, sheet = get_sheet()
-    filaments = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
+    rows = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
+
+    # build counts for all matching attribute groups (total and low)
+    threshold = getattr(log_data, "EMPTY_THRESHOLD", 250)
+    counts = {}
+    for r in rows:
+        key = (r[2] if len(r) > 2 else None,
+               r[3] if len(r) > 3 else None,
+               r[5] if len(r) > 5 else None,
+               r[6] if len(r) > 6 else None)
+        entry = counts.setdefault(key, {"total": 0, "low": 0})
+        entry["total"] += 1
+
+        is_empty = (len(r) > 11 and r[11] is not None and str(r[11]).lower() == "true")
+        filament_amount = None
+        if len(r) > 7 and r[7] is not None:
+            try:
+                filament_amount = float(r[7])
+            except Exception:
+                filament_amount = None
+
+        if is_empty or (filament_amount is not None and filament_amount < threshold):
+            entry["low"] += 1
+
+    # collect unique favorite groups (one row per unique attributes) and attach counts
     unique_favorites = {}
-    for f in filaments:
+    for f in rows:
         if len(f) > 12 and str(f[12]).lower() == "true":
             key = (f[2], f[3], f[4], f[5], f[6])  # Brand, Color, Material, Attr1, Attr2
+            # only add once
             if key not in unique_favorites:
-                # Build Amazon search URL
-                query = " ".join([str(f[2]), str(f[3]), str(f[4]), str(f[5]) if f[5] is not None else "", str(f[6]) if f[6] is not None else "", "filament"])
-                amazon_url = "https://www.amazon.com/s?k=" + "+".join(query.split())
+                # Build Amazon search URL (optional)
+                query = " ".join([
+                    str(f[2]) if f[2] is not None else "",
+                    str(f[3]) if f[3] is not None else "",
+                    str(f[4]) if f[4] is not None else "",
+                    str(f[5]) if f[5] is not None else "",
+                    str(f[6]) if f[6] is not None else "",
+                    "filament"
+                ]).strip()
+                amazon_url = "https://www.amazon.com/s?k=" + "+".join(query.split()) if query else ""
+
+                # attribute key used for counts excludes material index 4? keep consistent: counts key used (brand,color,attr1,attr2)
+                counts_key = (f[2], f[3], f[5], f[6])
+                c = counts.get(counts_key, {"total": 0, "low": 0})
+
                 unique_favorites[key] = {
                     "brand": f[2],
                     "color": f[3],
                     "material": f[4],
                     "attribute_1": f[5],
                     "attribute_2": f[6],
-                    "amazon_url": amazon_url
+                    "amazon_url": amazon_url,
+                    "total_count": c["total"],
+                    "low_count": c["low"]
                 }
+
     return render_template("favorites.html", favorites=list(unique_favorites.values()))
 
 if __name__ == "__main__":
