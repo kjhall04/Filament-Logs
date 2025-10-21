@@ -1,5 +1,5 @@
 import openpyxl
-from datetime import datetime
+from datetime import datetime, timedelta
 
 FILE_PATH = r"C:\Users\LichKing\Desktop\Programming\Filament-Logs\filament_inventory.xlsx"
 
@@ -9,15 +9,39 @@ def _load_sheet(path: str = FILE_PATH):
     wb = openpyxl.load_workbook(path, data_only=True)
     return wb.active
 
-def get_most_popular_filaments(file_path: str = FILE_PATH, top_n: int = 10):
+def _parse_timestamp(v):
+    if v is None:
+        return None
+    if isinstance(v, datetime):
+        return v
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(str(v), fmt)
+        except Exception:
+            continue
+    # last resort: try float/int -> excel serial (not implemented) -> return None
+    return None
+
+def get_most_popular_filaments(file_path: str = FILE_PATH, top_n: int = 10, weeks: int | None = None):
     """
     Return a list of dicts for the most popular filaments sorted by times_logged_out desc.
+    If `weeks` is provided (e.g. weeks=4) only rows with last-logged timestamp within that window
+    are considered. Note: spreadsheet only stores the latest timestamp per roll.
     Each dict contains: brand, color, material, attribute_1, attribute_2, times_logged_out, weight, is_favorite
     """
     sheet = _load_sheet(file_path)
     popular_filaments = []
+    cutoff = None
+    if weeks is not None:
+        cutoff = datetime.now() - timedelta(weeks=weeks)
 
     for row in sheet.iter_rows(min_row=2, values_only=True):
+        # if a cutoff is set, parse timestamp and skip rows older than cutoff
+        if cutoff is not None:
+            last_logged = _parse_timestamp(row[0] if len(row) > 0 else None)
+            if last_logged is None or last_logged < cutoff:
+                continue
+
         brand = row[2] if len(row) > 2 else None
         color = row[3] if len(row) > 3 else None
         material = row[4] if len(row) > 4 else None
