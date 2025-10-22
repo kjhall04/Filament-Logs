@@ -1,116 +1,92 @@
 # Filament Logs
 
-A Python-based inventory management system for tracking 3D printer filament rolls. This project uses Excel files for data storage and provides utilities for logging filament usage, generating barcodes, managing favorites, and tracking inventory. It includes a modern Flask web application and terminal-based tools.
+A Python-based inventory management system for tracking 3D printer filament rolls. Uses an Excel file for storage and provides a Flask web UI plus terminal tools.
 
 ## Features
 
 - Log filament usage and update inventory in an Excel file
 - Add new filament rolls with automatic barcode generation
 - Mark rolls as empty based on a configurable threshold
-- Mark and display favorite filament rolls (with gold stars in the web app)
-- Modular code for data manipulation and barcode generation
-- Barcode and attribute mapping via JSON files
-- Modern web interface (Flask) with search, pagination, favorites, and stats pages
-- Terminal interface for command-line usage
-- USB barcode scanner and scale integration (if supported by hardware)
+- Mark and display favorite filament groups (deduplicated by brand/color/attributes)
+- "Get Weight" button reads a connected USB scale (if available)
+- Amazon search links for favorites (generated from brand/color/material)
+- Modular backend for data manipulation, barcode generation, and stats
+- Barcode/attribute mappings stored as JSON for easy editing
+
+## Quick Start
+
+1. Create a virtual env and install dependencies:
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   pip install -r requirements.txt
+   ```
+2. Run the web app:
+   ```powershell
+   python GUI/MAIN.py
+   ```
+3. Open your browser at http://127.0.0.1:5000
 
 ## Requirements
 
 - Python 3.8+
-- [openpyxl](https://pypi.org/project/openpyxl/)
-- [hidapi](https://pypi.org/project/hidapi/) (for scale integration)
-- [Flask](https://pypi.org/project/Flask/) (for web app)
-- [python-dotenv](https://pypi.org/project/python-dotenv/) (for environment variables)
-- [difflib](https://docs.python.org/3/library/difflib.html) (standard library, for fuzzy matching)
+- See requirements.txt (recommended). Core packages:
+  - flask
+  - openpyxl
+  - python-dotenv
+  - hidapi (only required for scale integration)
+  - portalocker (optional — file locking for safe concurrent writes)
 
-Install dependencies with:
-```sh
-pip install openpyxl hidapi flask python-dotenv
+Install single-shot:
+```powershell
+pip install openpyxl flask python-dotenv hidapi portalocker
+```
+or
+```powershell
+pip install -r requirements.txt
 ```
 
-## Project Structure
+## Project Layout
 
 ```
 Filament-Logs/
-│
 ├── GUI/
 │   ├── MAIN.py
-│   ├── backend/
-│   │   ├── data_manipulation.py
-│   │   ├── generate_barcode.py
-│   │   ├── log_data.py
-│   │   ├── spreadsheet_stats.py
-│   ├── data/
-│   │   ├── brand_mapping.json
-│   │   ├── color_mapping.json
-│   │   ├── material_mapping.json
-│   │   └── attribute_mapping.json
-│   ├── static/
-│   │   └── MakerCampus_Logo.jpg
-│   └── templates/
-│       ├── index.html
-│       ├── log.html
-│       ├── new_roll.html
-│       ├── popular.html
-│       ├── low_empty.html
-│       ├── empty_rolls.html
-│
-├── Terminal/
-│   ├── backend/
-│   │   ├── MAIN.py
-│   │   ├── log_data.py
-│   │   ├── data_manipulation.py
-│   │   ├── generate_barcode.py
-│   │   └── spreadsheet_stats.py
-│   └── data/
-│       ├── brand_mapping.json
-│       ├── color_mapping.json
-│       ├── material_mapping.json
-│       └── attribute_mapping.json
-│
-├── filament_inventory.xlsx  # (auto-generated)
+│   ├── backend/ (data_manipulation.py, generate_barcode.py, log_data.py, spreadsheet_stats.py)
+│   ├── data/ (mapping jsons)
+│   └── templates/ + static/
+├── filament_inventory.xlsx  # auto-created
 └── README.md
 ```
-## Usage
 
-### Web Application (Recommended)
+## Web App Notes
 
-Run the Flask web app:
-```sh
-python GUI/MAIN.py
-```
-- Access the inventory, log usage, add new rolls, mark favorites, and view stats in your browser.
-- Use the search bar and pagination to quickly find filament rolls.
-- Search for "favorite" to filter and display only favorite rolls (gold stars).
-- Barcode scanner input works in focused fields; scale integration is available if supported.
+- The web UI templates (log/new_roll/favorites/etc.) include:
+  - "Get Weight" button which calls /api/scale_weight to read the scale and prefill weight fields.
+  - Barcode scanner handling: barcode input suppresses Enter submission and moves focus to the weight field to avoid accidental submits.
+  - Autofill reduced by using nonstandard autocomplete tokens.
 
-### Terminal
+- Scale integration:
+  - Endpoint: GET /api/scale_weight — returns JSON { "weight": <grams> } or an error (503) if no scale/read failure.
+  - The Flask server must run on the machine that has the USB scale attached.
+  - Requires hidapi; if no scale is present the UI still allows manual weight entry.
 
-Run the terminal menu:
-```sh
-python Terminal/backend/MAIN.py
-```
-- When prompted, enter `Admin` for admin functions or any other value for user mode.
-- Admins can log new rolls, view stats, and more; users can log filament usage.
+## Favorites page
 
-### Direct Function Usage
+- Favorites are deduplicated by brand + color + attributes (only one row per unique combination shown).
+- For each favorite group the page shows:
+  - Brand, Color, Material, Attribute 1, Attribute 2
+  - Total count of rolls matching that group
+  - Count marked low/empty (uses configured threshold)
+  - A generated Amazon search link (opens Amazon search for brand/color/material filament)
 
-- To log a new filament roll, use the `log_full_filament_data()` function.
-- To update an existing roll's usage, use the `log_filament_data()` function.
+## Stats and Time-window filtering
 
-## Configuration
+- Most-popular function can be filtered by recent weeks (example: last 4 weeks) — this filters rows by the sheet's last-logged timestamp.
+- If you need per-event counts in a timeframe, consider enabling an "events" sheet that appends a row per usage and aggregate from that.
 
-- The Excel file path is set in `log_data.py` and `MAIN.py` as `filament_inventory.xlsx`.
-- The empty threshold (in grams) is configurable via the `EMPTY_THRESHOLD` variable.
-- Barcode, color, material, and attribute mappings are stored in JSON files under `GUI/data/` and `Terminal/data/`.
-- Environment variables (such as Flask secret key) can be set in a `.env` file.
+## Config & Constants
 
-## Notes
-
-- The Excel file is created automatically if it does not exist.
-- Make sure to keep the barcode format consistent with your data manipulation logic.
-- The scale integration requires a compatible USB scale (e.g., DYMO M10) and the `hidapi` library.
-- Admin/user role selection is supported in the terminal menu.
-- The web app provides dynamic search, pagination, and favorite marking for all inventory and stats pages.
-- All templates display empty cells instead of `None`.
-- Favorite rolls are visually indicated with gold stars in the web app.
+- Excel file path and thresholds:
+  - FILE_PATH and EMPTY_THRESHOLD are defined in backend modules (log_data/spreadsheet_stats).
+- Recommendation: centralize the spreadsheet column indices (COL_TIMESTAMP, COL_BARCODE, COL_BRAND, etc.) in a constants file to avoid indexing bugs.
