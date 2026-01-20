@@ -158,60 +158,104 @@ def favorites():
     wb, sheet = get_sheet()
     rows = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
 
-    # build counts for all matching attribute groups (total and low)
-    threshold = getattr(log_data, "EMPTY_THRESHOLD", 250)
+    # Ensure threshold is numeric
+    try:
+        threshold = float(getattr(log_data, "EMPTY_THRESHOLD", 250))
+    except Exception:
+        threshold = 250.0
+
+    # Helpers
+    def key_norm(val):
+        # normalization for grouping keys: lower-case + trim
+        if val is None:
+            return ""
+        return str(val).strip().lower()
+
+    def display_norm(val):
+        # trimmed value for display (preserve case)
+        if val is None:
+            return ""
+        return str(val).strip()
+
+    import re
+    number_re = re.compile(r"[-+]?\d{1,3}(?:,\d{3})*(?:\.\d+)?|[-+]?\d*\.?\d+")
+    def parse_number(v):
+        """Try to extract a numeric value from v. Returns float or None."""
+        if v is None:
+            return None
+        # If it's already a number type, coerce to float
+        if isinstance(v, (int, float)):
+            return float(v)
+        s = str(v).strip()
+        if s == "":
+            return None
+        # remove common unit words and trailing g/G etc
+        # Use regex to extract the first numeric token (handles 1,000 and decimals)
+        m = number_re.search(s.replace(',', ''))
+        if not m:
+            return None
+        try:
+            return float(m.group())
+        except Exception:
+            return None
+
+    # Build counts for groups (brand, color, attr1, attr2)
     counts = {}
     for r in rows:
-        key = (r[2] if len(r) > 2 else None,
-               r[3] if len(r) > 3 else None,
-               r[5] if len(r) > 5 else None,
-               r[6] if len(r) > 6 else None)
+        brand_k = key_norm(r[2]) if len(r) > 2 else ""
+        color_k = key_norm(r[3]) if len(r) > 3 else ""
+        attr1_k = key_norm(r[5]) if len(r) > 5 else ""
+        attr2_k = key_norm(r[6]) if len(r) > 6 else ""
+        key = (brand_k, color_k, attr1_k, attr2_k)
         entry = counts.setdefault(key, {"total": 0, "low": 0})
         entry["total"] += 1
 
-        is_empty = (len(r) > 11 and r[11] is not None and str(r[11]).lower() == "true")
-        filament_amount = None
-        if len(r) > 7 and r[7] is not None:
-            try:
-                filament_amount = float(r[7])
-            except Exception:
-                filament_amount = None
+        # Determine empty flag
+        is_empty = False
+        if len(r) > 11 and r[11] is not None:
+            is_empty = str(r[11]).strip().lower() == "true"
 
+        # Parse filament amount safely
+        filament_amount = None
+        if len(r) > 7:
+            filament_amount = parse_number(r[7])
+
+        # Count as low if empty OR amount < threshold
         if is_empty or (filament_amount is not None and filament_amount < threshold):
             entry["low"] += 1
 
-    # collect unique favorite groups (one row per unique attributes) and attach counts
+    # Collect unique favorite groups and attach counts (grouping excludes material)
     unique_favorites = {}
     for f in rows:
-        if len(f) > 12 and str(f[12]).lower() == "true":
-            key = (f[2], f[3], f[4], f[5], f[6])  # Brand, Color, Material, Attr1, Attr2
-            # only add once
-            if key not in unique_favorites:
-                # Build Amazon search URL (optional)
-                query = " ".join([
-                    str(f[2]) if f[2] is not None else "",
-                    str(f[3]) if f[3] is not None else "",
-                    str(f[4]) if f[4] is not None else "",
-                    str(f[5]) if f[5] is not None else "",
-                    str(f[6]) if f[6] is not None else "",
-                    "filament"
-                ]).strip()
-                amazon_url = "https://www.amazon.com/s?k=" + "+".join(query.split()) if query else ""
+        if len(f) > 12 and f[12] is not None and str(f[12]).strip().lower() == "true":
+            brand_disp = display_norm(f[2]) if len(f) > 2 else ""
+            color_disp = display_norm(f[3]) if len(f) > 3 else ""
+            material_disp = display_norm(f[4]) if len(f) > 4 else ""
+            attr1_disp = display_norm(f[5]) if len(f) > 5 else ""
+            attr2_disp = display_norm(f[6]) if len(f) > 6 else ""
 
-                # attribute key used for counts excludes material index 4? keep consistent: counts key used (brand,color,attr1,attr2)
-                counts_key = (f[2], f[3], f[5], f[6])
-                c = counts.get(counts_key, {"total": 0, "low": 0})
+            fav_key = (brand_disp.lower(), color_disp.lower(), material_disp.lower(), attr1_disp.lower(), attr2_disp.lower())
+            if fav_key in unique_favorites:
+                continue
 
-                unique_favorites[key] = {
-                    "brand": f[2],
-                    "color": f[3],
-                    "material": f[4],
-                    "attribute_1": f[5],
-                    "attribute_2": f[6],
-                    "amazon_url": amazon_url,
-                    "total_count": c["total"],
-                    "low_count": c["low"]
-                }
+            # Build Amazon search URL
+            query = " ".join([brand_disp, color_disp, material_disp, attr1_disp, attr2_disp, "filament"]).strip()
+            amazon_url = "https://www.amazon.com/s?k=" + "+".join(query.split()) if query else ""
+
+            # Use same grouping key used when computing counts (brand,color,attr1,attr2)
+            counts_key = (brand_disp.lower(), color_disp.lower(), attr1_disp.lower(), attr2_disp.lower())
+            c = counts.get(counts_key, {"total": 0, "low": 0})
+
+            unique_favorites[fav_key] = {
+                "brand": f[2],
+                "color": f[3],
+                "material": f[4],
+                "attribute_1": f[5],
+                "attribute_2": f[6],
+                "amazon_url": amazon_url,
+                "total_count": c["total"],
+                "low_count": c["low"]
+            }
 
     return render_template("favorites.html", favorites=list(unique_favorites.values()))
 
