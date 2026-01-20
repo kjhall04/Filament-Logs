@@ -158,11 +158,8 @@ def favorites():
     wb, sheet = get_sheet()
     rows = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
 
-    # Ensure threshold is numeric
-    try:
-        threshold = float(getattr(log_data, "EMPTY_THRESHOLD", 250))
-    except Exception:
-        threshold = 250.0
+    # Threshold for determining if filament is "low"
+    LOW_THRESHOLD = 250
 
     # Helpers
     def key_norm(val):
@@ -199,29 +196,25 @@ def favorites():
         except Exception:
             return None
 
-    # Build counts for groups (brand, color, attr1, attr2)
+    # Build counts for groups (brand, color, material, attr1, attr2)
     counts = {}
     for r in rows:
         brand_k = key_norm(r[2]) if len(r) > 2 else ""
         color_k = key_norm(r[3]) if len(r) > 3 else ""
+        material_k = key_norm(r[4]) if len(r) > 4 else ""
         attr1_k = key_norm(r[5]) if len(r) > 5 else ""
         attr2_k = key_norm(r[6]) if len(r) > 6 else ""
-        key = (brand_k, color_k, attr1_k, attr2_k)
+        key = (brand_k, color_k, material_k, attr1_k, attr2_k)
         entry = counts.setdefault(key, {"total": 0, "low": 0})
         entry["total"] += 1
-
-        # Determine empty flag
-        is_empty = False
-        if len(r) > 11 and r[11] is not None:
-            is_empty = str(r[11]).strip().lower() == "true"
 
         # Parse filament amount safely
         filament_amount = None
         if len(r) > 7:
             filament_amount = parse_number(r[7])
 
-        # Count as low if empty OR amount < threshold
-        if is_empty or (filament_amount is not None and filament_amount < threshold):
+        # Count as low if amount < 250
+        if filament_amount is not None and filament_amount < LOW_THRESHOLD:
             entry["low"] += 1
 
     # Collect unique favorite groups and attach counts (grouping excludes material)
@@ -242,8 +235,8 @@ def favorites():
             query = " ".join([brand_disp, color_disp, material_disp, attr1_disp, attr2_disp, "filament"]).strip()
             amazon_url = "https://www.amazon.com/s?k=" + "+".join(query.split()) if query else ""
 
-            # Use same grouping key used when computing counts (brand,color,attr1,attr2)
-            counts_key = (brand_disp.lower(), color_disp.lower(), attr1_disp.lower(), attr2_disp.lower())
+            # Use same grouping key used when computing counts (brand,color,material,attr1,attr2)
+            counts_key = (brand_disp.lower(), color_disp.lower(), material_disp.lower(), attr1_disp.lower(), attr2_disp.lower())
             c = counts.get(counts_key, {"total": 0, "low": 0})
 
             unique_favorites[fav_key] = {
