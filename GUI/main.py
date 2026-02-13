@@ -8,16 +8,11 @@ from backend import spreadsheet_stats
 from backend import log_data
 from backend import generate_barcode
 from backend import data_manipulation
+from backend.config import EXCEL_PATH, LOW_THRESHOLD
 
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
-
-EXCEL_PATH = os.getenv(
-    "EXCEL_PATH",
-    os.path.join(os.path.dirname(__file__), "data", "filament_inventory.xlsx"),
-)
-
 
 def parse_int(value, field_name):
     if value is None or str(value).strip() == "":
@@ -194,7 +189,6 @@ def favorites():
     rows = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
 
     # Threshold for determining if filament is "low"
-    LOW_THRESHOLD = 250
 
     # Helpers
     def key_norm(val):

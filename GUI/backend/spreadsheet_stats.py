@@ -1,10 +1,8 @@
 import openpyxl
 from datetime import datetime, timedelta
+from backend.config import EXCEL_PATH, LOW_THRESHOLD
 
-FILE_PATH = r"C:\Users\LichKing\Desktop\Programming\Filament-Logs\filament_inventory.xlsx"
-
-
-def _load_sheet(path: str = FILE_PATH):
+def _load_sheet(path: str = EXCEL_PATH):
     """Return the active sheet for the given workbook path."""
     wb = openpyxl.load_workbook(path, data_only=True)
     return wb.active
@@ -22,7 +20,7 @@ def _parse_timestamp(v):
     # last resort: try float/int -> excel serial (not implemented) -> return None
     return None
 
-def get_most_popular_filaments(file_path: str = FILE_PATH, top_n: int = 10, weeks: int | None = None):
+def get_most_popular_filaments(file_path: str = EXCEL_PATH, top_n: int = 10, weeks: int | None = None):
     """
     Return a list of dicts for the most popular filaments sorted by times_logged_out desc.
     If `weeks` is provided (e.g. weeks=4) only rows with last-logged timestamp within that window
@@ -75,7 +73,7 @@ def get_most_popular_filaments(file_path: str = FILE_PATH, top_n: int = 10, week
     popular_filaments.sort(key=lambda x: x.get('times_logged_out', 0), reverse=True)
     return popular_filaments[:top_n]
 
-def get_low_or_empty_filaments(file_path: str = FILE_PATH, low_threshold: float = 250.0):
+def get_low_or_empty_filaments(file_path: str = EXCEL_PATH, low_threshold: float = LOW_THRESHOLD):
     """
     Return filaments that are marked empty or have filament amount below low_threshold.
     Each dict contains: brand, color, material, attribute_1, attribute_2, weight, is_favorite
@@ -115,7 +113,7 @@ def get_low_or_empty_filaments(file_path: str = FILE_PATH, low_threshold: float 
 
     return results
 
-def get_empty_rolls(file_path: str = FILE_PATH):
+def get_empty_rolls(file_path: str = EXCEL_PATH):
     """
     Return rows marked as empty. Each dict contains: brand, color, material, attribute_1, attribute_2,
     times_logged_out, last_logged (string or None), is_favorite. Sorted newest last_logged first when possible.
