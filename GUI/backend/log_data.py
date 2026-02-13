@@ -2,21 +2,21 @@ import os
 import openpyxl
 from datetime import datetime
 from backend import generate_barcode
+from backend.config import EXCEL_PATH, EMPTY_THRESHOLD
 
-FILE_PATH = r"C:\Users\LichKing\Desktop\Programming\Filament-Logs\filament_inventory.xlsx"
-EMPTY_THRESHOLD = 5
 HEADERS = ['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2',
            'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty',
            'Is Favorite']
 
 def get_workbook_and_sheet():
     """Return (workbook, sheet), creating the file with headers if needed."""
-    if not os.path.exists(FILE_PATH):
+    os.makedirs(os.path.dirname(EXCEL_PATH), exist_ok=True)
+    if not os.path.exists(EXCEL_PATH):
         wb = openpyxl.Workbook()
         sheet = wb.active
         sheet.append(HEADERS)
-        wb.save(FILE_PATH)
-    wb = openpyxl.load_workbook(FILE_PATH)
+        wb.save(EXCEL_PATH)
+    wb = openpyxl.load_workbook(EXCEL_PATH)
     return wb, wb.active
 
 def log_filament_data_web(barcode, filament_amount, roll_weight=None):
@@ -58,7 +58,7 @@ def log_filament_data_web(barcode, filament_amount, roll_weight=None):
             break
 
     if updated:
-        wb.save(FILE_PATH)
+        wb.save(EXCEL_PATH)
     return updated
 
 def log_full_filament_data_web(brand, color, material, attr1, attr2, location, starting_weight, roll_weight):
@@ -97,7 +97,7 @@ def log_full_filament_data_web(brand, color, material, attr1, attr2, location, s
         'False',
         'False'
     ])
-    wb.save(FILE_PATH)
+    wb.save(EXCEL_PATH)
 
     return {
         "timestamp": timestamp,
