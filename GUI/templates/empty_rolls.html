@@ -37,7 +37,7 @@
         </thead>
         <tbody>
             {% for roll in rolls %}
-            <tr>
+            <tr data-favorite="{{ 'true' if roll.is_favorite and roll.is_favorite|lower == 'true' else 'false' }}">
                 <td style="text-align:center; vertical-align:middle;">
                     {% if roll.is_favorite and roll.is_favorite|lower == 'true' %}
                         <span style="color:gold; font-size:2rem; line-height:1; display:inline-flex; align-items:center; justify-content:center;">&#9733;</span>
@@ -63,9 +63,7 @@
         rows.forEach(row => {
             let match = false;
             if (filter === "favorite") {
-                // Show only rows with a gold star
-                const star = row.querySelector('td span');
-                match = star && star.style.color === "gold";
+                match = row.dataset.favorite === "true";
             } else {
                 row.querySelectorAll('td').forEach(cell => {
                     if (cell.textContent.toLowerCase().includes(filter)) {

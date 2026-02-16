@@ -64,17 +64,11 @@
         let rows = document.querySelectorAll('table tbody tr');
         rows.forEach(row => {
             let match = false;
-            if (filter === "favorite") {
-                // Show only rows with a gold star
-                const star = row.querySelector('td span');
-                match = star && star.style.color === "gold";
-            } else {
-                row.querySelectorAll('td').forEach(cell => {
-                    if (cell.textContent.toLowerCase().includes(filter)) {
-                        match = true;
-                    }
-                });
-            }
+            row.querySelectorAll('td').forEach(cell => {
+                if (cell.textContent.toLowerCase().includes(filter)) {
+                    match = true;
+                }
+            });
             row.style.display = match ? '' : 'none';
         });
     });

@@ -46,12 +46,6 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
-    {% set favorite_barcodes = [] %}
-    {% for filament in filaments %}
-        {% if filament|length > 12 and filament[12] == 'True' %}
-            {% set _ = favorite_barcodes.append(filament[1]) %}
-        {% endif %}
-    {% endfor %}
     <div class="table-responsive">
         <table class="table table-striped" id="filamentTable">
             <thead>
@@ -73,7 +67,7 @@
             </thead>
             <tbody>
                 {% for filament in filaments %}
-                <tr>
+                <tr data-favorite="{{ 'true' if filament|length > 12 and filament[12]|lower == 'true' else 'false' }}">
                     <td>
                         <button class="favorite-btn" data-barcode="{{ filament[1] }}" style="background:none; border:none; padding:0; cursor:pointer;">
                             {% if filament|length > 12 and filament[12]|lower == 'true' %}
@@ -120,7 +114,9 @@
     let filteredRows = rows;
 
     function showPage(page) {
-        currentPage = page;
+        const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
+        currentPage = Math.min(Math.max(1, page), totalPages);
+        page = currentPage;
         let start = (page - 1) * perPage;
         let end = start + perPage;
         rows.forEach(row => row.style.display = 'none');
@@ -154,9 +150,7 @@
         let filter = this.value.trim().toLowerCase();
         filteredRows = rows.filter(row => {
             if (filter === "favorite") {
-                // Show only rows with a gold star (favorite)
-                const star = row.querySelector('.favorite-btn span');
-                return star && star.style.color === "gold";
+                return row.dataset.favorite === "true";
             }
             return Array.from(row.querySelectorAll('td')).some(cell =>
                 cell.textContent.toLowerCase().includes(filter)
