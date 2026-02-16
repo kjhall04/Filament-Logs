@@ -8,14 +8,22 @@ from backend import spreadsheet_stats
 from backend import log_data
 from backend import generate_barcode
 from backend import data_manipulation
+from backend.config import EXCEL_PATH, LOW_THRESHOLD
 
 load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY")
 
-EXCEL_PATH = r"C:\Users\LichKing\Desktop\Programming\Filament-Logs\filament_inventory.xlsx"
+def parse_int(value, field_name):
+    if value is None or str(value).strip() == "":
+        raise ValueError(f"{field_name} is required.")
+    try:
+        return int(value)
+    except ValueError as exc:
+        raise ValueError(f"{field_name} must be a whole number.") from exc
 
 def get_sheet():
+    os.makedirs(os.path.dirname(EXCEL_PATH), exist_ok=True)
     if not os.path.exists(EXCEL_PATH):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -65,14 +73,29 @@ def empty_rolls():
 @app.route("/log", methods=["GET", "POST"])
 def log_filament():
     if request.method == "POST":
-        barcode = request.form["barcode"]
-        weight = request.form["weight"]
-        roll_weight_val = data_manipulation.get_roll_weight(barcode, get_sheet()[1])
-        filament_amount = int(weight) - int(roll_weight_val)
-        result = log_data.log_filament_data_web(barcode, filament_amount, roll_weight_val)
+        barcode = request.form.get("barcode", "").strip()
+        weight = request.form.get("weight", "")
+        if not barcode:
+            flash("Barcode is required.", "error")
+            return render_template("log.html", barcode=barcode, weight=weight)
+        try:
+            weight_value = parse_int(weight, "Weight")
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return render_template("log.html", barcode=barcode, weight=weight)
+        _, sheet = get_sheet()
+        roll_weight_val = data_manipulation.get_roll_weight(barcode, sheet)
+        if roll_weight_val is None:
+            flash("Roll weight not found for this barcode.", "error")
+            return render_template("log.html", barcode=barcode, weight=weight)
+        filament_amount = weight_value - int(roll_weight_val)
+        if filament_amount < 0:
+            flash("Weight is below the recorded roll weight.", "error")
+            return render_template("log.html", barcode=barcode, weight=weight)
+        log_data.log_filament_data_web(barcode, filament_amount, roll_weight_val)
         flash("Filament usage logged successfully!", "success")
-        return redirect(url_for("index")) 
-    return render_template("log.html")
+        return redirect(url_for("index"))
+    return render_template("log.html", barcode="", weight="")
 
 @app.route("/new_roll", methods=["GET", "POST"])
 def new_roll():
@@ -121,10 +144,39 @@ def new_roll():
         attr2 = request.form.get("attribute_2", "")
         location = request.form.get("location", "")
         barcode = request.form.get("barcode", "")
-        starting_weight = int(request.form.get("weight", ""))
+        try:
+            starting_weight = parse_int(request.form.get("weight", ""), "Starting weight")
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return render_template(
+                "new_roll.html",
+                step="weight",
+                barcode=barcode,
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location,
+                scale_weight=request.form.get("weight", "")
+            )
 
         # Calculate roll weight for new roll
         FILAMENT_AMOUNT = data_manipulation.FILAMENT_AMOUNT  # e.g., 1000
+        if starting_weight < FILAMENT_AMOUNT:
+            flash("Starting weight must be at least the filament amount.", "error")
+            return render_template(
+                "new_roll.html",
+                step="weight",
+                barcode=barcode,
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location,
+                scale_weight=starting_weight
+            )
         roll_weight = starting_weight - FILAMENT_AMOUNT
         filament_amount = starting_weight - roll_weight  # Should be FILAMENT_AMOUNT
 
@@ -139,7 +191,7 @@ def new_roll():
         return redirect(url_for("index"))
 
     # Initial GET: show info form
-    return render_template("new_roll.html", step="info")
+    return render_template("new_roll.html", step="info", brand="", color="", material="", attribute_1="", attribute_2="", location="")
 
 @app.route("/toggle_favorite", methods=["POST"])
 def toggle_favorite():
@@ -159,7 +211,6 @@ def favorites():
     rows = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
 
     # Threshold for determining if filament is "low"
-    LOW_THRESHOLD = 250
 
     # Helpers
     def key_norm(val):

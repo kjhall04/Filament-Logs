@@ -17,6 +17,16 @@
         <h1 class="mb-0">Add New Filament Roll</h1>
         <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
     </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     {% if step == "info" %}
     <div class="mb-3 d-flex gap-2">
         <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
@@ -26,32 +36,32 @@
     <form method="post" id="infoForm" autocomplete="off" novalidate>
         <div class="mb-3">
             <label>Brand</label>
-            <input type="text" name="brand" class="form-control" required autocomplete="off">
+            <input type="text" name="brand" class="form-control" required autocomplete="off" value="{{ brand or '' }}">
             <small class="form-text text-muted">Brand of the filament.</small>
         </div>
         <div class="mb-3">
             <label>Color</label>
-            <input type="text" name="color" class="form-control" required autocomplete="off">
+            <input type="text" name="color" class="form-control" required autocomplete="off" value="{{ color or '' }}">
             <small class="form-text text-muted">Color of the filament.</small>
         </div>
         <div class="mb-3">
             <label>Material</label>
-            <input type="text" name="material" class="form-control" required autocomplete="off">
+            <input type="text" name="material" class="form-control" required autocomplete="off" value="{{ material or '' }}">
             <small class="form-text text-muted">Material type (e.g., PLA, ABS).</small>
         </div>
         <div class="mb-3">
             <label>Attribute 1</label>
-            <input type="text" name="attribute_1" class="form-control" autocomplete="off">
+            <input type="text" name="attribute_1" class="form-control" autocomplete="off" value="{{ attribute_1 or '' }}">
             <small class="form-text text-muted">Additional attribute information.</small>
         </div>
         <div class="mb-3">
             <label>Attribute 2</label>
-            <input type="text" name="attribute_2" class="form-control" autocomplete="off">
+            <input type="text" name="attribute_2" class="form-control" autocomplete="off" value="{{ attribute_2 or '' }}">
             <small class="form-text text-muted">Additional attribute information.</small>
         </div>
         <div class="mb-3">
             <label>Location</label>
-            <input type="text" name="location" class="form-control" autocomplete="off">
+            <input type="text" name="location" class="form-control" autocomplete="off" value="{{ location or '' }}">
             <small class="form-text text-muted">Location of the filament roll (Lab or Storage).</small>
         </div>
     </form>
