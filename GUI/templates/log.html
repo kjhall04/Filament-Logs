@@ -17,6 +17,16 @@
         <h1 class="mb-0">Log Filament Usage</h1>
         <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
     </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
     <form id="logForm" method="post" autocomplete="off" novalidate onsubmit="return validateLogForm();">
         <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
         <button type="submit" class="btn btn-primary me-2">Log Usage</button>
@@ -27,12 +37,13 @@
             <small class="form-text text-muted">Scan the barcode of the filament roll.</small>
         </div>
         <div class="mb-3">
-            <label for="weight" class="form-label">Filament Amount (g)</label>
+            <label for="weight" class="form-label">Current Roll Weight (g)</label>
             <input type="text" class="form-control" id="weight" name="weight" required autocomplete="off">
-            <small class="form-text text-muted">Enter the weight of the filament roll.</small>
+            <small class="form-text text-muted">Enter the current total roll weight from the scale.</small>
         </div>
     </form>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 /* prevent scanner Enter from submitting form; move focus to weight */
 document.getElementById('barcode').addEventListener('keydown', function(e){
@@ -42,6 +53,20 @@ document.getElementById('barcode').addEventListener('keydown', function(e){
         setTimeout(()=> document.getElementById('weight').focus(), 50);
     }
 });
+
+function validateLogForm() {
+    const barcode = document.getElementById('barcode').value.trim();
+    const weightText = document.getElementById('weight').value.trim();
+    if (!barcode) {
+        alert('Barcode is required.');
+        return false;
+    }
+    if (weightText === '' || !/^-?\d+$/.test(weightText)) {
+        alert('Weight must be a whole number in grams.');
+        return false;
+    }
+    return true;
+}
 </script>
 </body>
 </html>

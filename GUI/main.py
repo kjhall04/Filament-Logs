@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import openpyxl
 import os
 from datetime import datetime
@@ -12,7 +12,7 @@ from backend.config import EXCEL_PATH, LOW_THRESHOLD
 
 load_dotenv()
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-change-me")
 
 def parse_int(value, field_name):
     if value is None or str(value).strip() == "":
@@ -22,8 +22,24 @@ def parse_int(value, field_name):
     except ValueError as exc:
         raise ValueError(f"{field_name} must be a whole number.") from exc
 
+def parse_timestamp(value):
+    if value is None:
+        return datetime.min
+    if isinstance(value, datetime):
+        return value
+    text = str(value).strip()
+    if not text:
+        return datetime.min
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(text, fmt)
+        except ValueError:
+            continue
+    return datetime.min
+
 def get_sheet():
-    os.makedirs(os.path.dirname(EXCEL_PATH), exist_ok=True)
+    excel_dir = os.path.dirname(EXCEL_PATH) or "."
+    os.makedirs(excel_dir, exist_ok=True)
     if not os.path.exists(EXCEL_PATH):
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -38,11 +54,8 @@ def get_sheet():
 def index():
     wb, sheet = get_sheet()
     filaments = [row for row in sheet.iter_rows(min_row=2, values_only=True)]
-    # Sort by timestamp (first column), descending
-    filaments.sort(
-        key=lambda x: datetime.strptime(str(x[0]), "%Y-%m-%d %H:%M:%S") if x[0] else datetime.min,
-        reverse=True
-    )
+    # Sort by timestamp (first column), descending.
+    filaments.sort(key=lambda x: parse_timestamp(x[0]), reverse=True)
     # Build favorites list
     favorite_barcodes = [f[1] for f in filaments if len(f) > 12 and str(f[12]).lower() == "true"]
     return render_template(
@@ -54,19 +67,19 @@ def index():
 
 @app.route("/popular")
 def popular_filaments():
-    wb, sheet = get_sheet()
+    get_sheet()
     popular = spreadsheet_stats.get_most_popular_filaments()
     return render_template("popular.html", filaments=popular)
 
 @app.route("/low_empty")
 def low_empty_filaments():
-    wb, sheet = get_sheet()
+    get_sheet()
     low_empty = spreadsheet_stats.get_low_or_empty_filaments()
     return render_template("low_empty.html", filaments=low_empty)
 
 @app.route("/empty_rolls")
 def empty_rolls():
-    wb, sheet = get_sheet()
+    get_sheet()
     empty = spreadsheet_stats.get_empty_rolls()
     return render_template("empty_rolls.html", rolls=empty)
 
@@ -92,7 +105,10 @@ def log_filament():
         if filament_amount < 0:
             flash("Weight is below the recorded roll weight.", "error")
             return redirect(url_for("log_filament"))
-        log_data.log_filament_data_web(barcode, filament_amount, roll_weight_val)
+        updated = log_data.log_filament_data_web(barcode, filament_amount, roll_weight_val)
+        if not updated:
+            flash("Barcode not found. Please add this roll first.", "error")
+            return redirect(url_for("log_filament"))
         flash("Filament usage logged successfully!", "success")
         return redirect(url_for("index"))
     return render_template("log.html")
@@ -102,17 +118,25 @@ def new_roll():
     wb, sheet = get_sheet()
     # Step 1: Enter filament info and generate barcode
     if request.method == "POST" and "step" not in request.form:
-        brand = request.form.get("brand", "")
-        color = request.form.get("color", "")
-        material = request.form.get("material", "")
-        attr1 = request.form.get("attribute_1", "")
-        attr2 = request.form.get("attribute_2", "")
-        location = request.form.get("location", "")
+        brand = request.form.get("brand", "").strip()
+        color = request.form.get("color", "").strip()
+        material = request.form.get("material", "").strip()
+        attr1 = request.form.get("attribute_1", "").strip()
+        attr2 = request.form.get("attribute_2", "").strip()
+        location = request.form.get("location", "").strip()
+
+        if not brand or not color or not material:
+            flash("Brand, color, and material are required.", "error")
+            return redirect(url_for("new_roll"))
 
         # Generate barcode
-        barcode = generate_barcode.generate_filament_barcode(
-            brand, color, material, attr1, attr2, location, sheet
-        )
+        try:
+            barcode = generate_barcode.generate_filament_barcode(
+                brand, color, material, attr1, attr2, location, sheet
+            )
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return redirect(url_for("new_roll"))
 
         # Read weight from scale using data_manipulation
         scale_weight = None
@@ -137,13 +161,18 @@ def new_roll():
 
     # Step 2: Enter current weight after barcode is generated
     if request.method == "POST" and request.form.get("step") == "weight":
-        brand = request.form.get("brand", "")
-        color = request.form.get("color", "")
-        material = request.form.get("material", "")
-        attr1 = request.form.get("attribute_1", "")
-        attr2 = request.form.get("attribute_2", "")
-        location = request.form.get("location", "")
-        barcode = request.form.get("barcode", "")
+        brand = request.form.get("brand", "").strip()
+        color = request.form.get("color", "").strip()
+        material = request.form.get("material", "").strip()
+        attr1 = request.form.get("attribute_1", "").strip()
+        attr2 = request.form.get("attribute_2", "").strip()
+        location = request.form.get("location", "").strip()
+        barcode = request.form.get("barcode", "").strip()
+
+        if not barcode:
+            flash("Missing barcode. Please generate a barcode first.", "error")
+            return redirect(url_for("new_roll"))
+
         try:
             starting_weight = parse_int(request.form.get("weight", ""), "Starting weight")
         except ValueError as exc:
@@ -173,13 +202,20 @@ def new_roll():
 
 @app.route("/toggle_favorite", methods=["POST"])
 def toggle_favorite():
-    barcode = request.json.get("barcode")
+    payload = request.get_json(silent=True) or {}
+    barcode = str(payload.get("barcode", "")).strip()
+    if not barcode:
+        return jsonify({"error": "Missing barcode"}), 400
     wb, sheet = get_sheet()
+    found = False
     for row in sheet.iter_rows(min_row=2):
         if str(row[1].value) == barcode:
             current = str(row[12].value).lower() if row[12].value else "false"
             row[12].value = "False" if current == "true" else "True"
+            found = True
             break
+    if not found:
+        return jsonify({"error": "Barcode not found"}), 404
     wb.save(EXCEL_PATH)
     return '', 204
 
