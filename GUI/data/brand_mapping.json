@@ -4,7 +4,7 @@
     "03": "Polymaker",
     "04": "Prusa",
     "05": "Generic",
-    "06": "Overture",
+    "06": "Inland",
     "07": "MatterHackers",
     "08": "Ultimaker",
     "09": "eSun",
@@ -39,5 +39,17 @@
     "38": "Duramic 3D",
     "39": "R3D",
     "40": "MakerBot",
-    "41": "OVV3D"
+    "41": "OVV3D",
+    "42": "Anycubic",
+    "43": "FlashForge",
+    "44": "QIDI Tech",
+    "45": "Fiberlogy",
+    "46": "Devil Design",
+    "47": "Extrudr",
+    "48": "BASF Ultrafuse",
+    "49": "AMOLEN",
+    "50": "Geeetech",
+    "51": "Kingroon",
+    "52": "JAYO",
+    "53": "IIID MAX"
 }

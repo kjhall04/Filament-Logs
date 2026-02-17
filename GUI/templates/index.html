@@ -8,15 +8,6 @@
     <span class="text-muted">Total rolls: {{ total }}</span>
 </div>
 
-<div class="d-flex flex-wrap gap-2 mb-3">
-    <a href="{{ url_for('log_filament') }}" class="btn btn-primary">Log Filament Usage</a>
-    <a href="{{ url_for('new_roll') }}" class="btn btn-success">Add New Roll</a>
-    <a href="{{ url_for('popular_filaments') }}" class="btn btn-info">Most Popular</a>
-    <a href="{{ url_for('low_empty_filaments') }}" class="btn btn-warning">Low/Empty</a>
-    <a href="{{ url_for('empty_rolls') }}" class="btn btn-danger">Empty Rolls</a>
-    <a href="{{ url_for('favorites') }}" class="btn btn-dark">Favorites</a>
-</div>
-
 <div class="mb-3">
     <input type="text" id="searchInput" class="form-control" placeholder="Search inventory... (type 'favorite' to filter starred)">
 </div>

@@ -13,6 +13,15 @@
             --app-muted: #6b7280;
             --app-border: #d1d5db;
             --app-striped: #f9fafb;
+            --app-accent: #2563eb;
+            --app-accent-contrast: #ffffff;
+
+            --bs-body-bg: var(--app-bg);
+            --bs-body-color: var(--app-text);
+            --bs-secondary-color: var(--app-muted);
+            --bs-emphasis-color: var(--app-text);
+            --bs-border-color: var(--app-border);
+            --bs-tertiary-bg: var(--app-surface);
         }
 
         html[data-theme="dark"] {
@@ -22,6 +31,12 @@
             --app-muted: #94a3b8;
             --app-border: #334155;
             --app-striped: #1f2937;
+            --app-accent: #3b82f6;
+            --app-accent-contrast: #ffffff;
+
+            --bs-link-color: #93c5fd;
+            --bs-link-hover-color: #bfdbfe;
+            --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28229, 231, 235, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
         body {
@@ -66,6 +81,11 @@
             color: var(--app-text);
             border-color: var(--app-border);
             margin-bottom: 0;
+            --bs-table-color: var(--app-text);
+            --bs-table-bg: var(--app-surface);
+            --bs-table-border-color: var(--app-border);
+            --bs-table-striped-color: var(--app-text);
+            --bs-table-striped-bg: var(--app-striped);
         }
 
         .table > :not(caption) > * > * {
@@ -85,6 +105,32 @@
             border: 1px solid var(--app-border);
             border-radius: 0.5rem;
             background-color: var(--app-surface);
+        }
+
+        .table thead th {
+            color: var(--app-text);
+        }
+
+        .pagination {
+            --bs-pagination-color: var(--app-text);
+            --bs-pagination-bg: var(--app-surface);
+            --bs-pagination-border-color: var(--app-border);
+            --bs-pagination-hover-color: var(--app-text);
+            --bs-pagination-hover-bg: var(--app-striped);
+            --bs-pagination-hover-border-color: var(--app-border);
+            --bs-pagination-focus-color: var(--app-text);
+            --bs-pagination-focus-bg: var(--app-striped);
+            --bs-pagination-focus-box-shadow: none;
+            --bs-pagination-active-color: var(--app-accent-contrast);
+            --bs-pagination-active-bg: var(--app-accent);
+            --bs-pagination-active-border-color: var(--app-accent);
+            --bs-pagination-disabled-color: var(--app-muted);
+            --bs-pagination-disabled-bg: var(--app-surface);
+            --bs-pagination-disabled-border-color: var(--app-border);
+        }
+
+        canvas {
+            color: var(--app-text) !important;
         }
     </style>
     {% block head_extra %}{% endblock %}
@@ -142,7 +188,40 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-window.APP_SETTINGS = {{ app_settings|tojson }};
+window.APP_SETTINGS = {{ app_settings|default({}, true)|tojson|safe }};
+
+function applyChartThemeDefaults() {
+    const chartTextColor = getComputedStyle(document.documentElement).getPropertyValue("--app-text").trim();
+    const chartGridColor = getComputedStyle(document.documentElement).getPropertyValue("--app-border").trim();
+
+    if (!window.Chart || !window.Chart.defaults) {
+        return false;
+    }
+
+    window.Chart.defaults.color = chartTextColor || "#111827";
+    window.Chart.defaults.borderColor = chartGridColor || "#d1d5db";
+
+    if (window.Chart.defaults.plugins && window.Chart.defaults.plugins.legend) {
+        if (!window.Chart.defaults.plugins.legend.labels) {
+            window.Chart.defaults.plugins.legend.labels = {};
+        }
+        window.Chart.defaults.plugins.legend.labels.color = chartTextColor || "#111827";
+    }
+
+    if (window.Chart.instances) {
+        Object.values(window.Chart.instances).forEach((chart) => {
+            try {
+                chart.update();
+            } catch (_) {
+                // no-op
+            }
+        });
+    }
+    return true;
+}
+
+applyChartThemeDefaults();
+window.addEventListener("load", applyChartThemeDefaults);
 
 (function () {
     const settings = window.APP_SETTINGS || {};

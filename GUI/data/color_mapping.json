@@ -173,5 +173,27 @@
         "550": "Galaxy Chameleon",
         "551": "Rainbow Forest",
         "552": "Crystal Rainbow Prairie"
+    },
+    "Transparent": {
+        "560": "Transparent",
+        "561": "Natural",
+        "562": "Smoke",
+        "563": "Transparent Blue",
+        "564": "Transparent Green",
+        "565": "Transparent Red"
+    },
+    "Metallic": {
+        "570": "Copper",
+        "571": "Brass",
+        "572": "Rose Gold",
+        "573": "Gunmetal",
+        "574": "Titanium"
+    },
+    "Fluorescent": {
+        "580": "Fluorescent Green",
+        "581": "Fluorescent Orange",
+        "582": "Fluorescent Pink",
+        "583": "Fluorescent Blue",
+        "584": "Fluorescent Red"
     }
 }
