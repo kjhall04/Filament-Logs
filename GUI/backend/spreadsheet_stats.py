@@ -1,170 +1,176 @@
-import openpyxl
-from datetime import datetime, timedelta
-from backend.config import EXCEL_PATH, LOW_THRESHOLD
+﻿from datetime import datetime, timedelta
 
-def _load_sheet(path: str = EXCEL_PATH):
-    """Return the active sheet for the given workbook path."""
-    wb = openpyxl.load_workbook(path, data_only=True)
-    return wb.active
+from backend.config import LOW_THRESHOLD
+from backend.workbook_store import open_workbook
 
-def _parse_timestamp(v):
-    if v is None:
+
+def _parse_timestamp(value):
+    if value is None:
         return None
-    if isinstance(v, datetime):
-        return v
+    if isinstance(value, datetime):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
         try:
-            return datetime.strptime(str(v), fmt)
-        except Exception:
+            return datetime.strptime(text, fmt)
+        except ValueError:
             continue
-    # last resort: try float/int -> excel serial (not implemented) -> return None
+
     return None
 
-def get_most_popular_filaments(file_path: str = EXCEL_PATH, top_n: int = 10, weeks: int | None = None):
-    """
-    Return a list of dicts for the most popular filaments sorted by times_logged_out desc.
-    If `weeks` is provided (e.g. weeks=4) only rows with last-logged timestamp within that window
-    are considered. Note: spreadsheet only stores the latest timestamp per roll.
-    Each dict contains: brand, color, material, attribute_1, attribute_2, times_logged_out, weight, is_favorite
-    """
-    sheet = _load_sheet(file_path)
-    popular_filaments = []
-    cutoff = None
-    if weeks is not None:
-        cutoff = datetime.now() - timedelta(weeks=weeks)
 
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        # if a cutoff is set, parse timestamp and skip rows older than cutoff
-        if cutoff is not None:
-            last_logged = _parse_timestamp(row[0] if len(row) > 0 else None)
-            if last_logged is None or last_logged < cutoff:
+def _to_float(value, default=None):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_int(value, default=0):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _inventory_records():
+    records = []
+    with open_workbook(write=False) as (_, inventory_sheet, _):
+        if inventory_sheet is None:
+            return records
+
+        for row in inventory_sheet.iter_rows(min_row=2, values_only=True):
+            barcode = ""
+            if row and len(row) > 1 and row[1] is not None:
+                barcode = str(row[1]).strip()
+
+            last_logged = row[0] if len(row) > 0 else None
+            records.append(
+                {
+                    "last_logged": last_logged,
+                    "last_logged_dt": _parse_timestamp(last_logged),
+                    "barcode": barcode,
+                    "brand": row[2] if len(row) > 2 else None,
+                    "color": row[3] if len(row) > 3 else None,
+                    "material": row[4] if len(row) > 4 else None,
+                    "attribute_1": row[5] if len(row) > 5 else None,
+                    "attribute_2": row[6] if len(row) > 6 else None,
+                    "weight": _to_float(row[7], default=0.0) if len(row) > 7 else 0.0,
+                    "location": row[8] if len(row) > 8 else None,
+                    "roll_weight": _to_float(row[9]) if len(row) > 9 else None,
+                    "times_logged_out": _to_int(row[10], default=0) if len(row) > 10 else 0,
+                    "is_empty": str(row[11]).strip().lower() == "true" if len(row) > 11 else False,
+                    "is_favorite": str(row[12]).strip().lower() == "true" if len(row) > 12 else False,
+                }
+            )
+
+    return records
+
+
+def _usage_counts_since(cutoff):
+    counts = {}
+    with open_workbook(write=False) as (_, __, events_sheet):
+        if events_sheet is None:
+            return counts
+
+        for row in events_sheet.iter_rows(min_row=2, values_only=True):
+            event_timestamp = _parse_timestamp(row[0] if len(row) > 0 else None)
+            event_type = str(row[1]).strip().lower() if len(row) > 1 and row[1] is not None else ""
+            barcode = str(row[2]).strip() if len(row) > 2 and row[2] is not None else ""
+
+            if event_type != "log_usage":
+                continue
+            if not barcode or event_timestamp is None or event_timestamp < cutoff:
                 continue
 
-        brand = row[2] if len(row) > 2 else None
-        color = row[3] if len(row) > 3 else None
-        material = row[4] if len(row) > 4 else None
-        attribute_1 = row[5] if len(row) > 5 else None
-        attribute_2 = row[6] if len(row) > 6 else None
-        times_logged_out = 0
-        if len(row) > 10 and row[10] is not None:
-            try:
-                times_logged_out = int(row[10])
-            except Exception:
-                try:
-                    times_logged_out = int(float(row[10]))
-                except Exception:
-                    times_logged_out = 0
-        weight = row[7] if len(row) > 7 else None
-        favorite = 'false'
-        if len(row) > 12 and row[12] is not None:
-            favorite = str(row[12]).lower()
+            counts[barcode] = counts.get(barcode, 0) + 1
 
-        popular_filaments.append({
-            'brand': brand,
-            'color': color,
-            'material': material,
-            'attribute_1': attribute_1,
-            'attribute_2': attribute_2,
-            'times_logged_out': times_logged_out,
-            'weight': weight,
-            'is_favorite': favorite
-        })
+    return counts
 
-    popular_filaments.sort(key=lambda x: x.get('times_logged_out', 0), reverse=True)
-    return popular_filaments[:top_n]
 
-def get_low_or_empty_filaments(file_path: str = EXCEL_PATH, low_threshold: float = LOW_THRESHOLD):
-    """
-    Return filaments that are marked empty or have filament amount below low_threshold.
-    Each dict contains: brand, color, material, attribute_1, attribute_2, weight, is_favorite
-    """
-    sheet = _load_sheet(file_path)
+def get_most_popular_filaments(top_n: int = 10, weeks: int | None = None):
+    records = _inventory_records()
+
+    if weeks is not None:
+        cutoff = datetime.now() - timedelta(weeks=weeks)
+        usage_counts = _usage_counts_since(cutoff)
+
+        if usage_counts:
+            filtered = []
+            for record in records:
+                count = usage_counts.get(record["barcode"], 0)
+                if count <= 0:
+                    continue
+                updated = dict(record)
+                updated["times_logged_out"] = count
+                filtered.append(updated)
+            records = filtered
+        else:
+            records = [
+                record
+                for record in records
+                if record["last_logged_dt"] is not None and record["last_logged_dt"] >= cutoff
+            ]
+
+    records.sort(key=lambda item: item.get("times_logged_out", 0), reverse=True)
+
+    return [
+        {
+            "brand": item.get("brand"),
+            "color": item.get("color"),
+            "material": item.get("material"),
+            "attribute_1": item.get("attribute_1"),
+            "attribute_2": item.get("attribute_2"),
+            "times_logged_out": item.get("times_logged_out", 0),
+            "weight": item.get("weight"),
+            "is_favorite": "true" if item.get("is_favorite") else "false",
+        }
+        for item in records[:top_n]
+    ]
+
+
+def get_low_or_empty_filaments(low_threshold: float = LOW_THRESHOLD):
+    records = _inventory_records()
     results = []
 
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        brand = row[2] if len(row) > 2 else None
-        color = row[3] if len(row) > 3 else None
-        material = row[4] if len(row) > 4 else None
-        attribute_1 = row[5] if len(row) > 5 else None
-        attribute_2 = row[6] if len(row) > 6 else None
-        filament_amount = None
-        if len(row) > 7 and row[7] is not None:
-            try:
-                filament_amount = float(row[7])
-            except Exception:
-                filament_amount = None
-        is_empty = 'false'
-        if len(row) > 11 and row[11] is not None:
-            is_empty = str(row[11]).lower()
-        favorite = 'false'
-        if len(row) > 12 and row[12] is not None:
-            favorite = str(row[12]).lower()
-
-        if is_empty == 'true' or (filament_amount is not None and filament_amount < low_threshold):
-            results.append({
-                'brand': brand,
-                'color': color,
-                'material': material,
-                'attribute_1': attribute_1,
-                'attribute_2': attribute_2,
-                'weight': filament_amount,
-                'is_favorite': favorite
-            })
+    for record in records:
+        if record["is_empty"] or record["weight"] < low_threshold:
+            results.append(
+                {
+                    "brand": record["brand"],
+                    "color": record["color"],
+                    "material": record["material"],
+                    "attribute_1": record["attribute_1"],
+                    "attribute_2": record["attribute_2"],
+                    "weight": record["weight"],
+                    "is_favorite": "true" if record["is_favorite"] else "false",
+                }
+            )
 
     return results
 
-def get_empty_rolls(file_path: str = EXCEL_PATH):
-    """
-    Return rows marked as empty. Each dict contains: brand, color, material, attribute_1, attribute_2,
-    times_logged_out, last_logged (string or None), is_favorite. Sorted newest last_logged first when possible.
-    """
-    sheet = _load_sheet(file_path)
-    empty_rolls = []
 
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        last_logged = row[0] if len(row) > 0 else None
-        brand = row[2] if len(row) > 2 else None
-        color = row[3] if len(row) > 3 else None
-        material = row[4] if len(row) > 4 else None
-        attribute_1 = row[5] if len(row) > 5 else None
-        attribute_2 = row[6] if len(row) > 6 else None
-        times_logged_out = 0
-        if len(row) > 10 and row[10] is not None:
-            try:
-                times_logged_out = int(row[10])
-            except Exception:
-                try:
-                    times_logged_out = int(float(row[10]))
-                except Exception:
-                    times_logged_out = 0
-        is_empty = 'false'
-        if len(row) > 11 and row[11] is not None:
-            is_empty = str(row[11]).lower()
-        favorite = 'false'
-        if len(row) > 12 and row[12] is not None:
-            favorite = str(row[12]).lower()
+def get_empty_rolls():
+    records = _inventory_records()
+    empty_records = [record for record in records if record["is_empty"]]
+    empty_records.sort(
+        key=lambda item: item["last_logged_dt"] if item["last_logged_dt"] is not None else datetime.min,
+        reverse=True,
+    )
 
-        if is_empty == 'true':
-            empty_rolls.append({
-                'brand': brand,
-                'color': color,
-                'material': material,
-                'attribute_1': attribute_1,
-                'attribute_2': attribute_2,
-                'times_logged_out': times_logged_out,
-                'last_logged': last_logged,
-                'is_favorite': favorite
-            })
-
-    def _parse_last_logged(v):
-        if v is None:
-            return datetime.min
-        if isinstance(v, datetime):
-            return v
-        try:
-            return datetime.strptime(str(v), "%Y-%m-%d %H:%M:%S")
-        except Exception:
-            return datetime.min
-
-    empty_rolls.sort(key=lambda x: _parse_last_logged(x.get('last_logged')), reverse=True)
-    return empty_rolls
+    return [
+        {
+            "brand": item["brand"],
+            "color": item["color"],
+            "material": item["material"],
+            "attribute_1": item["attribute_1"],
+            "attribute_2": item["attribute_2"],
+            "times_logged_out": item["times_logged_out"],
+            "last_logged": item["last_logged"],
+            "is_favorite": "true" if item["is_favorite"] else "false",
+        }
+        for item in empty_records
+    ]

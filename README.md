@@ -1,92 +1,63 @@
-# Filament Logs
+﻿# Filament Logs
 
-A Python-based inventory management system for tracking 3D printer filament rolls. Uses an Excel file for storage and provides a Flask web UI plus terminal tools.
+Flask-based inventory tracking for 3D printer filament rolls.
+Data is stored in an Excel workbook with an inventory sheet plus usage event history.
 
 ## Features
 
-- Log filament usage and update inventory in an Excel file
-- Add new filament rolls with automatic barcode generation
-- Mark rolls as empty based on a configurable threshold
-- Mark and display favorite filament groups (deduplicated by brand/color/attributes)
-- "Get Weight" button reads a connected USB scale (if available)
-- Amazon search links for favorites (generated from brand/color/material)
-- Modular backend for data manipulation, barcode generation, and stats
-- Barcode/attribute mappings stored as JSON for easy editing
+- Inventory dashboard with search, pagination, favorites, and quick actions
+- Log filament usage by barcode with decimal weight support
+- Add new rolls with strict mapping-driven dropdowns (brand/color/material/attributes/location)
+- Scale integration through `GET /api/scale_weight` (manual entry still supported)
+- Event history sheet (`UsageEvents`) for time-window popularity analytics
+- Settings page for:
+  - Light/Dark theme
+  - Alert handling (`all`, `errors_only`, `silent`, `browser`)
+  - Rows per page
+  - Default new-roll location
+  - Default popularity window (weeks)
+  - Configured filament amount for new-roll calculations
+  - Low-stock warning toggle
+- Optional file locking (`portalocker`) for safer concurrent workbook access
 
 ## Quick Start
 
-1. Create a virtual env and install dependencies:
+1. Create and activate a virtual environment:
    ```powershell
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
-   pip install -r requirements.txt
    ```
-2. Run the web app:
+2. Install dependencies:
+   ```powershell
+   pip install openpyxl flask python-dotenv hidapi portalocker
+   ```
+3. Run the app:
    ```powershell
    python GUI/MAIN.py
    ```
-3. Open your browser at http://127.0.0.1:5000
+4. Open: `http://127.0.0.1:5000`
 
-## Requirements
+## Data Files
 
-- Python 3.8+
-- See requirements.txt (recommended). Core packages:
-  - flask
-  - openpyxl
-  - python-dotenv
-  - hidapi (only required for scale integration)
-  - portalocker (optional — file locking for safe concurrent writes)
+- Inventory workbook (default): `GUI/data/filament_inventory.xlsx`
+- Settings file (default): `GUI/data/settings.json`
+- Mapping files:
+  - `GUI/data/brand_mapping.json`
+  - `GUI/data/color_mapping.json`
+  - `GUI/data/material_mapping.json`
+  - `GUI/data/attribute_mapping.json`
 
-Install single-shot:
-```powershell
-pip install openpyxl flask python-dotenv hidapi portalocker
-```
-or
-```powershell
-pip install -r requirements.txt
-```
+## Environment Variables
 
-## Project Layout
+- `EXCEL_PATH` (optional): override workbook path
+- `SETTINGS_PATH` (optional): override settings JSON path
+- `EMPTY_THRESHOLD` (optional, default `5`): mark roll empty at/below this amount
+- `LOW_THRESHOLD` (optional, default `250`): low-stock threshold used by reports/warnings
+- `FLASK_SECRET_KEY` (optional): Flask session secret
+- `FLASK_DEBUG` (optional, default `1`)
 
-```
-Filament-Logs/
-├── GUI/
-│   ├── MAIN.py
-│   ├── backend/ (data_manipulation.py, generate_barcode.py, log_data.py, spreadsheet_stats.py)
-│   ├── data/ (mapping jsons)
-│   └── templates/ + static/
-├── filament_inventory.xlsx  # auto-created
-└── README.md
-```
+## Notes
 
-## Web App Notes
-
-- The web UI templates (log/new_roll/favorites/etc.) include:
-  - "Get Weight" button which calls /api/scale_weight to read the scale and prefill weight fields.
-  - Barcode scanner handling: barcode input suppresses Enter submission and moves focus to the weight field to avoid accidental submits.
-  - Autofill reduced by using nonstandard autocomplete tokens.
-
-- Scale integration:
-  - Endpoint: GET /api/scale_weight — returns JSON { "weight": <grams> } or an error (503) if no scale/read failure.
-  - The Flask server must run on the machine that has the USB scale attached.
-  - Requires hidapi; if no scale is present the UI still allows manual weight entry.
-
-## Favorites page
-
-- Favorites are deduplicated by brand + color + attributes (only one row per unique combination shown).
-- For each favorite group the page shows:
-  - Brand, Color, Material, Attribute 1, Attribute 2
-  - Total count of rolls matching that group
-  - Count marked low/empty (uses configured threshold)
-  - A generated Amazon search link (opens Amazon search for brand/color/material filament)
-
-## Stats and Time-window filtering
-
-- Most-popular function can be filtered by recent weeks (example: last 4 weeks) — this filters rows by the sheet's last-logged timestamp.
-- If you need per-event counts in a timeframe, consider enabling an "events" sheet that appends a row per usage and aggregate from that.
-
-## Config & Constants
-
-- Excel file path and thresholds:
-  - FILE_PATH and EMPTY_THRESHOLD are defined in backend modules (log_data/spreadsheet_stats).
-- Recommendation: centralize the spreadsheet column indices (COL_TIMESTAMP, COL_BARCODE, COL_BRAND, etc.) in a constants file to avoid indexing bugs.
+- The Flask server must run on the machine connected to the USB scale.
+- If the scale is disconnected or unavailable, the app returns a `503` from `/api/scale_weight` and still allows manual entry.
+- Browser alert mode requires notification permission in the browser.

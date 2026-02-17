@@ -1,103 +1,221 @@
-import os
-import openpyxl
-from datetime import datetime
+﻿from datetime import datetime
+
 from backend import generate_barcode
-from backend.config import EXCEL_PATH, EMPTY_THRESHOLD
+from backend.config import EMPTY_THRESHOLD
+from backend.workbook_store import open_workbook
 
-HEADERS = ['Timestamp', 'Barcode', 'Brand', 'Color', 'Material', 'Attribute 1', 'Attribute 2',
-           'Filament Amount (g)', 'Location', 'Roll Weight (g)', 'Times Logged Out', 'Is Empty',
-           'Is Favorite']
 
-def get_workbook_and_sheet():
-    """Return (workbook, sheet), creating the file with headers if needed."""
-    os.makedirs(os.path.dirname(EXCEL_PATH), exist_ok=True)
-    if not os.path.exists(EXCEL_PATH):
-        wb = openpyxl.Workbook()
-        sheet = wb.active
-        sheet.append(HEADERS)
-        wb.save(EXCEL_PATH)
-    wb = openpyxl.load_workbook(EXCEL_PATH)
-    return wb, wb.active
+def _timestamp_now():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-def log_filament_data_web(barcode, filament_amount, roll_weight=None):
+
+def _to_float(value, default=None):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _to_int(value, default=0):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def _append_event(
+    events_sheet,
+    timestamp,
+    event_type,
+    barcode,
+    brand,
+    color,
+    material,
+    attr1,
+    attr2,
+    location,
+    input_weight,
+    roll_weight,
+    filament_amount,
+    delta_used,
+    times_logged_out,
+    source,
+):
+    if events_sheet is None:
+        return
+
+    events_sheet.append(
+        [
+            timestamp,
+            event_type,
+            barcode,
+            brand,
+            color,
+            material,
+            attr1,
+            attr2,
+            location,
+            input_weight,
+            roll_weight,
+            filament_amount,
+            delta_used,
+            times_logged_out,
+            source,
+        ]
+    )
+
+
+def log_filament_data_web(
+    barcode,
+    filament_amount,
+    roll_weight=None,
+    total_weight=None,
+    source="web",
+):
     """
-    Update an existing roll (identified by barcode) with a new filament_amount.
-    Increments Times Logged Out and sets Is Empty based on EMPTY_THRESHOLD.
-    Returns True if an existing row was updated, False otherwise.
+    Update an existing roll identified by barcode and append a usage event.
+    Returns True when the barcode exists, otherwise False.
     """
-    wb, sheet = get_workbook_and_sheet()
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    updated = False
+    timestamp = _timestamp_now()
+    target_barcode = str(barcode).strip()
 
-    for row in sheet.iter_rows(min_row=2):
-        cell_barcode = row[1].value
-        if cell_barcode is not None and str(cell_barcode).strip() == str(barcode).strip():
+    with open_workbook(write=True) as (_, inventory_sheet, events_sheet):
+        for row in inventory_sheet.iter_rows(min_row=2):
+            cell_barcode = row[1].value
+            if cell_barcode is None or str(cell_barcode).strip() != target_barcode:
+                continue
+
+            previous_amount = _to_float(row[7].value)
+            new_amount = _to_float(filament_amount, default=0.0)
+            new_amount = round(max(new_amount, 0.0), 2)
+
             row[0].value = timestamp
-            # store filament amount
-            try:
-                row[7].value = int(round(float(filament_amount)))
-            except Exception:
-                row[7].value = filament_amount
-            # increment times logged out
-            try:
-                row[10].value = int(row[10].value) + 1 if row[10].value is not None else 1
-            except Exception:
-                row[10].value = 1
-            # is empty
-            try:
-                row[11].value = 'True' if int(round(float(filament_amount))) <= EMPTY_THRESHOLD else 'False'
-            except Exception:
-                row[11].value = 'False'
-            # optionally update roll weight if provided
+            row[7].value = new_amount
+
+            times_logged_out = _to_int(row[10].value, default=0) + 1
+            row[10].value = times_logged_out
+
+            row[11].value = "True" if new_amount <= EMPTY_THRESHOLD else "False"
+
             if roll_weight is not None:
-                try:
-                    row[9].value = int(round(float(roll_weight)))
-                except Exception:
-                    row[9].value = roll_weight
-            updated = True
-            break
+                parsed_roll_weight = _to_float(roll_weight)
+                if parsed_roll_weight is not None:
+                    row[9].value = round(parsed_roll_weight, 2)
 
-    if updated:
-        wb.save(EXCEL_PATH)
-    return updated
+            delta_used = None
+            if previous_amount is not None:
+                delta_used = round(max(previous_amount - new_amount, 0.0), 2)
 
-def log_full_filament_data_web(brand, color, material, attr1, attr2, location, starting_weight, roll_weight):
+            _append_event(
+                events_sheet=events_sheet,
+                timestamp=timestamp,
+                event_type="log_usage",
+                barcode=target_barcode,
+                brand=row[2].value,
+                color=row[3].value,
+                material=row[4].value,
+                attr1=row[5].value,
+                attr2=row[6].value,
+                location=row[8].value,
+                input_weight=round(_to_float(total_weight, default=0.0), 2)
+                if total_weight is not None
+                else None,
+                roll_weight=round(_to_float(row[9].value, default=0.0), 2)
+                if row[9].value is not None
+                else None,
+                filament_amount=new_amount,
+                delta_used=delta_used,
+                times_logged_out=times_logged_out,
+                source=source,
+            )
+            return True
+
+    return False
+
+
+def add_new_roll_web(
+    brand,
+    color,
+    material,
+    attr1,
+    attr2,
+    location,
+    starting_weight,
+    filament_amount_target,
+    barcode=None,
+    source="web",
+):
     """
-    Add a new filament roll row to the sheet. Generates a barcode and computes
-    the initial filament amount as starting_weight - roll_weight.
-    Returns a dict with the created entry.
+    Add a new roll row and append an event log row.
+    Returns a dict containing the inserted roll values.
     """
-    wb, sheet = get_workbook_and_sheet()
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    barcode = generate_barcode.generate_filament_barcode(brand, color, material, attr1, attr2, location, sheet)
+    timestamp = _timestamp_now()
+    starting_weight_value = _to_float(starting_weight, default=0.0)
+    target_amount = _to_float(filament_amount_target, default=0.0)
+    roll_weight = round(starting_weight_value - target_amount, 2)
 
-    try:
-        starting = float(starting_weight)
-    except Exception:
-        starting = 0.0
-    try:
-        roll_w = float(roll_weight)
-    except Exception:
-        roll_w = 0.0
+    if roll_weight < 0:
+        raise ValueError("Starting weight must be at least the configured filament amount.")
 
-    filament_amount = int(round(starting - roll_w))
+    filament_amount = round(starting_weight_value - roll_weight, 2)
 
-    sheet.append([
-        timestamp,
-        barcode,
-        brand,
-        color,
-        material,
-        attr1,
-        attr2,
-        filament_amount,
-        location,
-        int(round(roll_w)),
-        0,
-        'False',
-        'False'
-    ])
-    wb.save(EXCEL_PATH)
+    with open_workbook(write=True) as (_, inventory_sheet, events_sheet):
+        if not barcode:
+            barcode = generate_barcode.generate_filament_barcode(
+                brand,
+                color,
+                material,
+                attr1,
+                attr2,
+                location,
+                inventory_sheet,
+            )
+
+        barcode = str(barcode).strip()
+        for row in inventory_sheet.iter_rows(min_row=2, values_only=True):
+            existing = ""
+            if row and len(row) > 1 and row[1] is not None:
+                existing = str(row[1]).strip()
+            if existing == barcode:
+                raise ValueError("Barcode already exists. Please retry adding this roll.")
+
+        is_empty = "True" if filament_amount <= EMPTY_THRESHOLD else "False"
+        inventory_sheet.append(
+            [
+                timestamp,
+                barcode,
+                brand,
+                color,
+                material,
+                attr1,
+                attr2,
+                filament_amount,
+                location,
+                roll_weight,
+                0,
+                is_empty,
+                "False",
+            ]
+        )
+
+        _append_event(
+            events_sheet=events_sheet,
+            timestamp=timestamp,
+            event_type="new_roll",
+            barcode=barcode,
+            brand=brand,
+            color=color,
+            material=material,
+            attr1=attr1,
+            attr2=attr2,
+            location=location,
+            input_weight=round(starting_weight_value, 2),
+            roll_weight=roll_weight,
+            filament_amount=filament_amount,
+            delta_used=0,
+            times_logged_out=0,
+            source=source,
+        )
 
     return {
         "timestamp": timestamp,
@@ -109,5 +227,25 @@ def log_full_filament_data_web(brand, color, material, attr1, attr2, location, s
         "attribute_2": attr2,
         "filament_amount": filament_amount,
         "location": location,
-        "roll_weight": int(round(roll_w))
+        "roll_weight": roll_weight,
     }
+
+
+def log_full_filament_data_web(brand, color, material, attr1, attr2, location, starting_weight, roll_weight):
+    """
+    Backwards-compatible helper retained for older code paths.
+    """
+    starting = _to_float(starting_weight, default=0.0)
+    roll = _to_float(roll_weight, default=0.0)
+    target = round(max(starting - roll, 0.0), 2)
+    return add_new_roll_web(
+        brand=brand,
+        color=color,
+        material=material,
+        attr1=attr1,
+        attr2=attr2,
+        location=location,
+        starting_weight=starting,
+        filament_amount_target=target,
+        source="legacy",
+    )

@@ -1,102 +1,129 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Add New Filament Roll</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .container {
-            padding: 0px;
-            margin-top: 24px;
-        }
-    </style>
-</head>
-<body>
-<div class="container mt-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="mb-0">Add New Filament Roll</h1>
-        <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
-    </div>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-    {% if step == "info" %}
-    <div class="mb-3 d-flex gap-2">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
-        <button type="submit" form="infoForm" class="btn btn-success me-2">Generate Barcode</button>
-    </div>
-    <hr>
-    <form method="post" id="infoForm" autocomplete="off" novalidate>
-        <div class="mb-3">
-            <label>Brand</label>
-            <input type="text" name="brand" class="form-control" value="{{ brand|default('', true) }}" autocomplete="off">
-            <small class="form-text text-muted">Brand of the filament.</small>
-        </div>
-        <div class="mb-3">
-            <label>Color</label>
-            <input type="text" name="color" class="form-control" value="{{ color|default('', true) }}" autocomplete="off">
-            <small class="form-text text-muted">Color of the filament.</small>
-        </div>
-        <div class="mb-3">
-            <label>Material</label>
-            <input type="text" name="material" class="form-control" value="{{ material|default('', true) }}" autocomplete="off">
-            <small class="form-text text-muted">Material type (e.g., PLA, ABS).</small>
-        </div>
-        <div class="mb-3">
-            <label>Attribute 1</label>
-            <input type="text" name="attribute_1" class="form-control" value="{{ attribute_1|default('', true) }}" autocomplete="off">
-            <small class="form-text text-muted">Additional attribute information.</small>
-        </div>
-        <div class="mb-3">
-            <label>Attribute 2</label>
-            <input type="text" name="attribute_2" class="form-control" value="{{ attribute_2|default('', true) }}" autocomplete="off">
-            <small class="form-text text-muted">Additional attribute information.</small>
-        </div>
-        <div class="mb-3">
-            <label>Location</label>
-            <input type="text" name="location" class="form-control" value="{{ location|default('', true) }}" autocomplete="off">
-            <small class="form-text text-muted">Location of the filament roll (Lab or Storage).</small>
-        </div>
-    </form>
-    {% elif step == "weight" %}
-    <div class="mb-3 d-flex gap-2">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
-        <button type="submit" form="weightForm" class="btn btn-primary me-2">Submit Weight</button>
-    </div>
-    <hr>
-    <div class="alert alert-info mb-3">
-        <strong>Barcode:</strong> {{ barcode }}
-    </div>
-    <form method="post" id="weightForm" autocomplete="off" novalidate>
-        <input type="hidden" name="step" value="weight" autocomplete="off">
-        <input type="hidden" name="brand" value="{{ brand|default('', true) }}" autocomplete="off">
-        <input type="hidden" name="color" value="{{ color|default('', true) }}" autocomplete="off">
-        <input type="hidden" name="material" value="{{ material|default('', true) }}" autocomplete="off">
-        <input type="hidden" name="attribute_1" value="{{ attribute_1|default('', true) }}" autocomplete="off">
-        <input type="hidden" name="attribute_2" value="{{ attribute_2|default('', true) }}" autocomplete="off">
-        <input type="hidden" name="location" value="{{ location|default('', true) }}" autocomplete="off">
-        <input type="hidden" name="barcode" value="{{ barcode|default('', true) }}">
+﻿{% extends "base.html" %}
 
-        <div class="mb-3">
-            <label>Current Weight (g)</label>
-            <input type="text" name="weight" class="form-control" value="{{ scale_weight|default('', true) }}" autocomplete="off">
-            <small class="form-text text-muted">Enter weight in grams shown on the scale.</small>
-        </div>
-        <!-- The Get Weight button is now at the top -->
-    </form>
-    {% elif step == "display" %}
-    <div class="mb-3">
-        <strong>Weight:</strong> {{ scale_weight }}
-    </div>
-    {% endif %}
+{% block title %}Add New Roll | Filament Logs{% endblock %}
+
+{% block content %}
+<h1 class="mb-3">Add New Filament Roll</h1>
+
+{% if step == "info" %}
+<div class="mb-3 d-flex gap-2">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+    <button type="submit" form="infoForm" class="btn btn-success">Generate Barcode</button>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+
+<form method="post" id="infoForm" autocomplete="off" novalidate>
+    <div class="mb-3">
+        <label class="form-label" for="brand">Brand</label>
+        <select id="brand" name="brand" class="form-select" required>
+            <option value="">Select brand</option>
+            {% for option in brand_options %}
+            <option value="{{ option }}" {% if brand == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="color">Color</label>
+        <select id="color" name="color" class="form-select" required>
+            <option value="">Select color</option>
+            {% for option in color_options %}
+            <option value="{{ option }}" {% if color == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="material">Material</label>
+        <select id="material" name="material" class="form-select" required>
+            <option value="">Select material</option>
+            {% for option in material_options %}
+            <option value="{{ option }}" {% if material == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="attribute_1">Attribute 1</label>
+        <select id="attribute_1" name="attribute_1" class="form-select">
+            {% for option in attribute_options %}
+            <option value="{{ option }}" {% if attribute_1 == option %}selected{% endif %}>{{ option if option else '(None)' }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="attribute_2">Attribute 2</label>
+        <select id="attribute_2" name="attribute_2" class="form-select">
+            {% for option in attribute_options %}
+            <option value="{{ option }}" {% if attribute_2 == option %}selected{% endif %}>{{ option if option else '(None)' }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="location">Location</label>
+        <select id="location" name="location" class="form-select" required>
+            {% for option in location_options %}
+            <option value="{{ option }}" {% if location == option %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+{% elif step == "weight" %}
+<div class="mb-3 d-flex gap-2">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+    <button type="submit" form="weightForm" class="btn btn-primary">Submit Weight</button>
+</div>
+
+<div class="alert alert-info">
+    <strong>Barcode:</strong> {{ barcode }}
+</div>
+
+<form method="post" id="weightForm" autocomplete="off" novalidate>
+    <input type="hidden" name="step" value="weight">
+    <input type="hidden" name="brand" value="{{ brand }}">
+    <input type="hidden" name="color" value="{{ color }}">
+    <input type="hidden" name="material" value="{{ material }}">
+    <input type="hidden" name="attribute_1" value="{{ attribute_1 }}">
+    <input type="hidden" name="attribute_2" value="{{ attribute_2 }}">
+    <input type="hidden" name="location" value="{{ location }}">
+    <input type="hidden" name="barcode" value="{{ barcode }}">
+
+    <div class="mb-3">
+        <label class="form-label" for="weight">Current Weight (g)</label>
+        <div class="input-group">
+            <input type="text" id="weight" name="weight" class="form-control" value="{{ scale_weight|default('', true) }}" autocomplete="off">
+            <button class="btn btn-outline-secondary" type="button" id="getWeightBtn">Get Weight</button>
+        </div>
+        <small class="form-text">Configured filament amount in settings: {{ '%.2f'|format(app_settings.filament_amount_g) }} g.</small>
+        <div id="scaleStatus" class="form-text"></div>
+    </div>
+</form>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if step == "weight" %}
+<script>
+document.getElementById("getWeightBtn").addEventListener("click", async function () {
+    const status = document.getElementById("scaleStatus");
+    status.textContent = "Reading from scale...";
+
+    try {
+        const response = await fetch("{{ url_for('api_scale_weight') }}");
+        const payload = await response.json();
+
+        if (!response.ok || typeof payload.weight !== "number") {
+            status.textContent = payload.error ? `Scale error: ${payload.error}` : "Scale read failed.";
+            return;
+        }
+
+        document.getElementById("weight").value = payload.weight.toFixed(2);
+        status.textContent = "Weight captured from scale.";
+    } catch (_) {
+        status.textContent = "Unable to reach the scale endpoint.";
+    }
+});
+</script>
+{% endif %}
+{% endblock %}
