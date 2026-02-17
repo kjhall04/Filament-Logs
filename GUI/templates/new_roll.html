@@ -8,65 +8,120 @@
 {% if step == "info" %}
 <div class="mb-3 d-flex gap-2">
     <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-    <button type="submit" form="infoForm" class="btn btn-success">Generate Barcode</button>
+    <button type="submit" form="infoForm" class="btn btn-primary">Generate Barcode</button>
 </div>
 
 <form method="post" id="infoForm" autocomplete="off" novalidate>
     <div class="mb-3">
         <label class="form-label" for="brand">Brand</label>
-        <select id="brand" name="brand" class="form-select" required>
-            <option value="">Select brand</option>
+        <input
+            type="text"
+            id="brand"
+            name="brand"
+            class="form-control"
+            value="{{ brand }}"
+            list="brandOptions"
+            placeholder="Enter brand"
+            required
+        >
+        <datalist id="brandOptions">
             {% for option in brand_options %}
-            <option value="{{ option }}" {% if brand == option %}selected{% endif %}>{{ option }}</option>
+            <option value="{{ option }}"></option>
             {% endfor %}
-        </select>
+        </datalist>
     </div>
 
     <div class="mb-3">
         <label class="form-label" for="color">Color</label>
-        <select id="color" name="color" class="form-select" required>
-            <option value="">Select color</option>
+        <input
+            type="text"
+            id="color"
+            name="color"
+            class="form-control"
+            value="{{ color }}"
+            list="colorOptions"
+            placeholder="Enter color"
+            required
+        >
+        <datalist id="colorOptions">
             {% for option in color_options %}
-            <option value="{{ option }}" {% if color == option %}selected{% endif %}>{{ option }}</option>
+            <option value="{{ option }}"></option>
             {% endfor %}
-        </select>
+        </datalist>
     </div>
 
     <div class="mb-3">
         <label class="form-label" for="material">Material</label>
-        <select id="material" name="material" class="form-select" required>
-            <option value="">Select material</option>
+        <input
+            type="text"
+            id="material"
+            name="material"
+            class="form-control"
+            value="{{ material }}"
+            list="materialOptions"
+            placeholder="Enter material"
+            required
+        >
+        <datalist id="materialOptions">
             {% for option in material_options %}
-            <option value="{{ option }}" {% if material == option %}selected{% endif %}>{{ option }}</option>
+            <option value="{{ option }}"></option>
             {% endfor %}
-        </select>
+        </datalist>
     </div>
 
     <div class="mb-3">
         <label class="form-label" for="attribute_1">Attribute 1</label>
-        <select id="attribute_1" name="attribute_1" class="form-select">
-            {% for option in attribute_options %}
-            <option value="{{ option }}" {% if attribute_1 == option %}selected{% endif %}>{{ option if option else '(None)' }}</option>
+        <input
+            type="text"
+            id="attribute_1"
+            name="attribute_1"
+            class="form-control"
+            value="{{ attribute_1 }}"
+            list="attributeOptions1"
+            placeholder="Enter attribute 1 (optional)"
+        >
+        <datalist id="attributeOptions1">
+            {% for option in attribute_options if option %}
+            <option value="{{ option }}"></option>
             {% endfor %}
-        </select>
+        </datalist>
     </div>
 
     <div class="mb-3">
         <label class="form-label" for="attribute_2">Attribute 2</label>
-        <select id="attribute_2" name="attribute_2" class="form-select">
-            {% for option in attribute_options %}
-            <option value="{{ option }}" {% if attribute_2 == option %}selected{% endif %}>{{ option if option else '(None)' }}</option>
+        <input
+            type="text"
+            id="attribute_2"
+            name="attribute_2"
+            class="form-control"
+            value="{{ attribute_2 }}"
+            list="attributeOptions2"
+            placeholder="Enter attribute 2 (optional)"
+        >
+        <datalist id="attributeOptions2">
+            {% for option in attribute_options if option %}
+            <option value="{{ option }}"></option>
             {% endfor %}
-        </select>
+        </datalist>
     </div>
 
     <div class="mb-3">
         <label class="form-label" for="location">Location</label>
-        <select id="location" name="location" class="form-select" required>
+        <input
+            type="text"
+            id="location"
+            name="location"
+            class="form-control"
+            value="{{ location }}"
+            list="locationOptions"
+            placeholder="Enter location"
+            required
+        >
+        <datalist id="locationOptions">
             {% for option in location_options %}
-            <option value="{{ option }}" {% if location == option %}selected{% endif %}>{{ option }}</option>
+            <option value="{{ option }}"></option>
             {% endfor %}
-        </select>
+        </datalist>
     </div>
 </form>
 {% elif step == "weight" %}

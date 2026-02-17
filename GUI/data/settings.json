@@ -1,7 +1,7 @@
 {
-  "theme": "light",
+  "theme": "dark",
   "alert_mode": "all",
-  "rows_per_page": 5,
+  "rows_per_page": 10,
   "default_location": "Lab",
   "popular_weeks": 4,
   "filament_amount_g": 1000.0,

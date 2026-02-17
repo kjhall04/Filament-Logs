@@ -2,10 +2,50 @@
 
 {% block title %}Settings | Filament Logs{% endblock %}
 
+{% block head_extra %}
+<style>
+    .settings-form .form-label {
+        font-weight: 600;
+    }
+
+    .settings-form .form-select {
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3e%3cpath fill='%23201870' d='M1.5 1.5L8 8l6.5-6.5L16 3 8 10 0 3z'/%3e%3c/svg%3e");
+        background-size: 0.9rem;
+    }
+
+    .settings-form input[type="number"] {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .settings-form input[type="number"]::-webkit-outer-spin-button,
+    .settings-form input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        margin: 0;
+        cursor: pointer;
+        border-left: 1px solid var(--app-border);
+        background: linear-gradient(
+            180deg,
+            rgba(var(--app-accent-rgb), 0.14),
+            rgba(var(--app-accent-2-rgb), 0.2)
+        );
+    }
+
+    .settings-form .form-check-input,
+    .settings-form .form-check-label {
+        cursor: pointer;
+    }
+
+    html[data-theme="dark"] .settings-form .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3e%3cpath fill='%23b6c0ff' d='M1.5 1.5L8 8l6.5-6.5L16 3 8 10 0 3z'/%3e%3c/svg%3e");
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <h1 class="mb-3">Settings</h1>
 
-<form method="post" class="card p-3 p-md-4">
+<form method="post" class="card p-3 p-md-4 settings-form">
     <div class="row g-3">
         <div class="col-md-6">
             <label for="theme" class="form-label">Theme</label>
