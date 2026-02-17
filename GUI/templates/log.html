@@ -27,18 +27,18 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
-    <form id="logForm" method="post" autocomplete="off" novalidate onsubmit="return validateLogForm();">
+    <form id="logForm" method="post" autocomplete="off" novalidate>
         <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
         <button type="submit" class="btn btn-primary me-2">Log Usage</button>
         <hr>
         <div class="mb-3">
             <label for="barcode" class="form-label">Barcode</label>
-            <input type="text" class="form-control" id="barcode" name="barcode" required autocomplete="off">
+            <input type="text" class="form-control" id="barcode" name="barcode" value="{{ form_data.barcode if form_data else '' }}" autocomplete="off">
             <small class="form-text text-muted">Scan the barcode of the filament roll.</small>
         </div>
         <div class="mb-3">
             <label for="weight" class="form-label">Current Roll Weight (g)</label>
-            <input type="text" class="form-control" id="weight" name="weight" required autocomplete="off">
+            <input type="text" class="form-control" id="weight" name="weight" value="{{ form_data.weight if form_data else '' }}" autocomplete="off">
             <small class="form-text text-muted">Enter the current total roll weight from the scale.</small>
         </div>
     </form>
@@ -54,19 +54,6 @@ document.getElementById('barcode').addEventListener('keydown', function(e){
     }
 });
 
-function validateLogForm() {
-    const barcode = document.getElementById('barcode').value.trim();
-    const weightText = document.getElementById('weight').value.trim();
-    if (!barcode) {
-        alert('Barcode is required.');
-        return false;
-    }
-    if (weightText === '' || !/^-?\d+$/.test(weightText)) {
-        alert('Weight must be a whole number in grams.');
-        return false;
-    }
-    return true;
-}
 </script>
 </body>
 </html>

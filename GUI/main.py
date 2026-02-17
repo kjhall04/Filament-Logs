@@ -85,33 +85,35 @@ def empty_rolls():
 
 @app.route("/log", methods=["GET", "POST"])
 def log_filament():
+    form_data = {"barcode": "", "weight": ""}
     if request.method == "POST":
         barcode = request.form.get("barcode", "").strip()
-        weight = request.form.get("weight", "")
+        weight = request.form.get("weight", "").strip()
+        form_data = {"barcode": barcode, "weight": weight}
         if not barcode:
             flash("Barcode is required.", "error")
-            return redirect(url_for("log_filament"))
+            return render_template("log.html", form_data=form_data)
         try:
             weight_value = parse_int(weight, "Weight")
         except ValueError as exc:
             flash(str(exc), "error")
-            return redirect(url_for("log_filament"))
+            return render_template("log.html", form_data=form_data)
         _, sheet = get_sheet()
         roll_weight_val = data_manipulation.get_roll_weight(barcode, sheet)
         if roll_weight_val is None:
             flash("Roll weight not found for this barcode.", "error")
-            return redirect(url_for("log_filament"))
+            return render_template("log.html", form_data=form_data)
         filament_amount = weight_value - int(roll_weight_val)
         if filament_amount < 0:
             flash("Weight is below the recorded roll weight.", "error")
-            return redirect(url_for("log_filament"))
+            return render_template("log.html", form_data=form_data)
         updated = log_data.log_filament_data_web(barcode, filament_amount, roll_weight_val)
         if not updated:
             flash("Barcode not found. Please add this roll first.", "error")
-            return redirect(url_for("log_filament"))
+            return render_template("log.html", form_data=form_data)
         flash("Filament usage logged successfully!", "success")
         return redirect(url_for("index"))
-    return render_template("log.html")
+    return render_template("log.html", form_data=form_data)
 
 @app.route("/new_roll", methods=["GET", "POST"])
 def new_roll():
@@ -127,7 +129,16 @@ def new_roll():
 
         if not brand or not color or not material:
             flash("Brand, color, and material are required.", "error")
-            return redirect(url_for("new_roll"))
+            return render_template(
+                "new_roll.html",
+                step="info",
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location
+            )
 
         # Generate barcode
         try:
@@ -136,7 +147,16 @@ def new_roll():
             )
         except ValueError as exc:
             flash(str(exc), "error")
-            return redirect(url_for("new_roll"))
+            return render_template(
+                "new_roll.html",
+                step="info",
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location
+            )
 
         # Read weight from scale using data_manipulation
         scale_weight = None
@@ -168,22 +188,54 @@ def new_roll():
         attr2 = request.form.get("attribute_2", "").strip()
         location = request.form.get("location", "").strip()
         barcode = request.form.get("barcode", "").strip()
+        weight_text = request.form.get("weight", "").strip()
 
         if not barcode:
             flash("Missing barcode. Please generate a barcode first.", "error")
-            return redirect(url_for("new_roll"))
+            return render_template(
+                "new_roll.html",
+                step="info",
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location
+            )
 
         try:
-            starting_weight = parse_int(request.form.get("weight", ""), "Starting weight")
+            starting_weight = parse_int(weight_text, "Starting weight")
         except ValueError as exc:
             flash(str(exc), "error")
-            return redirect(url_for("new_roll"))
+            return render_template(
+                "new_roll.html",
+                barcode=barcode,
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location,
+                scale_weight=weight_text,
+                step="weight"
+            )
 
         # Calculate roll weight for new roll
         FILAMENT_AMOUNT = data_manipulation.FILAMENT_AMOUNT  # e.g., 1000
         if starting_weight < FILAMENT_AMOUNT:
             flash("Starting weight must be at least the filament amount.", "error")
-            return redirect(url_for("new_roll"))
+            return render_template(
+                "new_roll.html",
+                barcode=barcode,
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location,
+                scale_weight=weight_text,
+                step="weight"
+            )
         roll_weight = starting_weight - FILAMENT_AMOUNT
         filament_amount = starting_weight - roll_weight  # Should be FILAMENT_AMOUNT
 
@@ -198,7 +250,16 @@ def new_roll():
         return redirect(url_for("index"))
 
     # Initial GET: show info form
-    return render_template("new_roll.html", step="info")
+    return render_template(
+        "new_roll.html",
+        step="info",
+        brand="",
+        color="",
+        material="",
+        attribute_1="",
+        attribute_2="",
+        location=""
+    )
 
 @app.route("/toggle_favorite", methods=["POST"])
 def toggle_favorite():
