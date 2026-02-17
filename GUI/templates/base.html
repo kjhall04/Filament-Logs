@@ -10,24 +10,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --app-bg: #edf2f7;
+            --app-bg: #eef0f8;
             --app-surface: #ffffff;
-            --app-surface-soft: #f8fafc;
-            --app-text: #0f172a;
-            --app-muted: #64748b;
-            --app-border: #cbd5e1;
-            --app-striped: #f8fafc;
-            --app-hover: #edf3ff;
-            --app-accent: #0ea5e9;
-            --app-accent-2: #f97316;
+            --app-surface-soft: #f4f6fd;
+            --app-text: #1d1a47;
+            --app-muted: #676b8d;
+            --app-border: #cfd4e6;
+            --app-striped: #f7f8fe;
+            --app-hover: #ebeffc;
+            --app-accent: #201870;
+            --app-accent-rgb: 32, 24, 112;
+            --app-accent-2: #88c038;
+            --app-accent-2-rgb: 136, 192, 56;
             --app-accent-contrast: #ffffff;
-            --app-gradient: linear-gradient(120deg, #0ea5e9 0%, #f97316 100%);
-            --app-navbar-bg: rgba(255, 255, 255, 0.86);
+            --app-gradient: linear-gradient(120deg, #201870 0%, #88c038 100%);
+            --app-navbar-bg: rgba(255, 255, 255, 0.9);
             --app-bg-image:
-                radial-gradient(70rem 40rem at -10% -15%, rgba(14, 165, 233, 0.2), transparent 58%),
-                radial-gradient(58rem 28rem at 110% -10%, rgba(249, 115, 22, 0.16), transparent 56%),
-                linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
-            --app-card-shadow: 0 10px 24px rgba(15, 23, 42, 0.09);
+                radial-gradient(70rem 42rem at -10% -16%, rgba(32, 24, 112, 0.2), transparent 58%),
+                radial-gradient(58rem 32rem at 112% -12%, rgba(136, 192, 56, 0.2), transparent 55%),
+                linear-gradient(180deg, #f8f9ff 0%, #eef0f8 100%);
+            --app-card-shadow: 0 10px 24px rgba(21, 20, 54, 0.1);
 
             --bs-body-bg: var(--app-bg);
             --bs-body-color: var(--app-text);
@@ -38,27 +40,29 @@
         }
 
         html[data-theme="dark"] {
-            --app-bg: #0b1220;
-            --app-surface: #111b2e;
-            --app-surface-soft: #172338;
-            --app-text: #e2e8f0;
-            --app-muted: #94a3b8;
-            --app-border: #2d3b52;
-            --app-striped: #0f1a2c;
-            --app-hover: #1a2b45;
-            --app-accent: #38bdf8;
-            --app-accent-2: #fb923c;
+            --app-bg: #0f1226;
+            --app-surface: #181d39;
+            --app-surface-soft: #1f2647;
+            --app-text: #e8ebff;
+            --app-muted: #a8b0d8;
+            --app-border: #323b63;
+            --app-striped: #151b36;
+            --app-hover: #24305b;
+            --app-accent: #8b95e5;
+            --app-accent-rgb: 139, 149, 229;
+            --app-accent-2: #9fd15b;
+            --app-accent-2-rgb: 159, 209, 91;
             --app-accent-contrast: #ffffff;
-            --app-gradient: linear-gradient(120deg, #38bdf8 0%, #fb923c 100%);
-            --app-navbar-bg: rgba(10, 18, 32, 0.88);
+            --app-gradient: linear-gradient(120deg, #8b95e5 0%, #9fd15b 100%);
+            --app-navbar-bg: rgba(12, 15, 32, 0.9);
             --app-bg-image:
-                radial-gradient(70rem 42rem at -8% -18%, rgba(56, 189, 248, 0.14), transparent 58%),
-                radial-gradient(56rem 30rem at 110% -10%, rgba(251, 146, 60, 0.12), transparent 54%),
-                linear-gradient(180deg, #0b1220 0%, #10192c 100%);
-            --app-card-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
+                radial-gradient(72rem 44rem at -8% -18%, rgba(139, 149, 229, 0.18), transparent 58%),
+                radial-gradient(56rem 30rem at 110% -10%, rgba(159, 209, 91, 0.16), transparent 55%),
+                linear-gradient(180deg, #0f1226 0%, #131938 100%);
+            --app-card-shadow: 0 12px 30px rgba(0, 0, 0, 0.42);
 
-            --bs-link-color: #7dd3fc;
-            --bs-link-hover-color: #bae6fd;
+            --bs-link-color: #b6c0ff;
+            --bs-link-hover-color: #d7ddff;
             --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28226, 232, 240, 0.88%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
@@ -118,7 +122,33 @@
             font-weight: 600;
             color: #ffffff;
             background: var(--app-gradient);
-            box-shadow: 0 6px 14px rgba(14, 165, 233, 0.33);
+            box-shadow: 0 6px 14px rgba(var(--app-accent-rgb), 0.35);
+        }
+
+        .app-logo-badge {
+            padding: 0.25rem;
+            border-radius: 0.9rem;
+            background: linear-gradient(
+                135deg,
+                rgba(var(--app-accent-rgb), 0.16),
+                rgba(var(--app-accent-2-rgb), 0.28)
+            );
+            border: 1px solid rgba(var(--app-accent-rgb), 0.24);
+            box-shadow: 0 8px 18px rgba(var(--app-accent-rgb), 0.26);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .app-logo-badge:hover {
+            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 10px 22px rgba(var(--app-accent-rgb), 0.32);
+        }
+
+        .app-logo-image {
+            display: block;
+            height: clamp(48px, 5vw, 64px);
+            width: auto;
+            border-radius: 0.65rem;
+            background-color: #ffffff;
         }
 
         .text-muted,
@@ -155,7 +185,7 @@
         .form-control:focus,
         .form-select:focus {
             border-color: var(--app-accent);
-            box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.2);
+            box-shadow: 0 0 0 0.2rem rgba(var(--app-accent-rgb), 0.22);
         }
 
         .btn {
@@ -178,11 +208,11 @@
         .btn-primary:hover,
         .btn-primary:focus {
             color: #ffffff;
-            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.34);
+            box-shadow: 0 8px 16px rgba(var(--app-accent-rgb), 0.34);
         }
 
         .btn-success {
-            background: linear-gradient(120deg, #16a34a 0%, #0ea5a4 100%);
+            background: linear-gradient(120deg, var(--app-accent-2) 0%, #6caf33 100%);
             border: 0;
             color: #ffffff;
         }
@@ -190,7 +220,7 @@
         .btn-success:hover,
         .btn-success:focus {
             color: #ffffff;
-            box-shadow: 0 8px 16px rgba(22, 163, 74, 0.3);
+            box-shadow: 0 8px 16px rgba(var(--app-accent-2-rgb), 0.34);
         }
 
         .btn-secondary {
@@ -307,12 +337,12 @@
         }
 
         .favorite-star.is-on {
-            color: #fbbf24;
-            text-shadow: 0 0 12px rgba(251, 191, 36, 0.34);
+            color: var(--app-accent-2);
+            text-shadow: 0 0 12px rgba(var(--app-accent-2-rgb), 0.34);
         }
 
         .favorite-star.is-off {
-            color: #94a3b8;
+            color: var(--app-muted);
         }
 
         canvas {
@@ -325,6 +355,10 @@
                 border-radius: 0;
                 border-left: 0;
                 border-right: 0;
+            }
+
+            .app-logo-image {
+                height: 44px;
             }
         }
     </style>
@@ -350,7 +384,9 @@
             <div class="d-flex align-items-center gap-2">
                 <span class="navbar-text small">{{ app_settings.theme|capitalize }} mode</span>
                 <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary btn-sm {% if request.endpoint == 'settings' %}active{% endif %}">Settings</a>
-                <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:36px; border-radius:4px;">
+                <div class="app-logo-badge">
+                    <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="MakerCampus logo" class="app-logo-image">
+                </div>
             </div>
         </div>
     </div>

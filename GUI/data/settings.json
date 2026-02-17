@@ -1,5 +1,5 @@
 {
-  "theme": "dark",
+  "theme": "light",
   "alert_mode": "all",
   "rows_per_page": 5,
   "default_location": "Lab",
