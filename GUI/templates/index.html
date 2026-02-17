@@ -33,13 +33,14 @@
         </thead>
         <tbody>
             {% for filament in filaments %}
-            <tr data-favorite="{{ 'true' if filament|length > 12 and filament[12]|string|lower == 'true' else 'false' }}">
+            {% set is_favorite = filament|length > 12 and filament[12]|string|lower == 'true' %}
+            <tr data-favorite="{{ 'true' if is_favorite else 'false' }}">
                 <td>
-                    <button class="favorite-btn" data-barcode="{{ filament[1] }}" style="background:none; border:none; padding:0; cursor:pointer;">
-                        {% if filament|length > 12 and filament[12]|string|lower == 'true' %}
-                            <span style="color:gold; font-size:1.6rem;">&#9733;</span>
+                    <button class="favorite-btn" type="button" data-barcode="{{ filament[1] }}" aria-label="Toggle favorite for {{ filament[1] }}">
+                        {% if is_favorite %}
+                            <span class="favorite-star is-on">&#9733;</span>
                         {% else %}
-                            <span style="color:#9ca3af; font-size:1.6rem;">&#9734;</span>
+                            <span class="favorite-star is-off">&#9734;</span>
                         {% endif %}
                     </button>
                 </td>

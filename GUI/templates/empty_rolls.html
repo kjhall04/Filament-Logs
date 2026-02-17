@@ -28,9 +28,9 @@
         <tbody>
             {% for roll in rolls %}
             <tr data-favorite="{{ 'true' if roll.is_favorite and roll.is_favorite|lower == 'true' else 'false' }}">
-                <td style="text-align:center; vertical-align:middle;">
+                <td class="text-center align-middle">
                     {% if roll.is_favorite and roll.is_favorite|lower == 'true' %}
-                    <span style="color:gold; font-size:1.5rem; line-height:1;">&#9733;</span>
+                    <span class="favorite-star is-on">&#9733;</span>
                     {% endif %}
                 </td>
                 <td>{{ roll.brand if roll.brand is not none else '' }}</td>

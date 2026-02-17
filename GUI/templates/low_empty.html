@@ -28,9 +28,9 @@
         <tbody>
             {% for filament in filaments %}
             <tr data-favorite="{{ 'true' if filament.is_favorite and filament.is_favorite|lower == 'true' else 'false' }}">
-                <td style="text-align:center; vertical-align:middle;">
+                <td class="text-center align-middle">
                     {% if filament.is_favorite and filament.is_favorite|lower == 'true' %}
-                    <span style="color:gold; font-size:1.5rem; line-height:1;">&#9733;</span>
+                    <span class="favorite-star is-on">&#9733;</span>
                     {% endif %}
                 </td>
                 <td>{{ filament.brand if filament.brand is not none else '' }}</td>

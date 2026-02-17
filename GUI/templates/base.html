@@ -5,16 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Filament Logs{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --app-bg: #f3f4f6;
+            --app-bg: #edf2f7;
             --app-surface: #ffffff;
-            --app-text: #111827;
-            --app-muted: #6b7280;
-            --app-border: #d1d5db;
-            --app-striped: #f9fafb;
-            --app-accent: #2563eb;
+            --app-surface-soft: #f8fafc;
+            --app-text: #0f172a;
+            --app-muted: #64748b;
+            --app-border: #cbd5e1;
+            --app-striped: #f8fafc;
+            --app-hover: #edf3ff;
+            --app-accent: #0ea5e9;
+            --app-accent-2: #f97316;
             --app-accent-contrast: #ffffff;
+            --app-gradient: linear-gradient(120deg, #0ea5e9 0%, #f97316 100%);
+            --app-navbar-bg: rgba(255, 255, 255, 0.86);
+            --app-bg-image:
+                radial-gradient(70rem 40rem at -10% -15%, rgba(14, 165, 233, 0.2), transparent 58%),
+                radial-gradient(58rem 28rem at 110% -10%, rgba(249, 115, 22, 0.16), transparent 56%),
+                linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+            --app-card-shadow: 0 10px 24px rgba(15, 23, 42, 0.09);
 
             --bs-body-bg: var(--app-bg);
             --bs-body-color: var(--app-text);
@@ -25,30 +38,58 @@
         }
 
         html[data-theme="dark"] {
-            --app-bg: #0f172a;
-            --app-surface: #111827;
-            --app-text: #e5e7eb;
+            --app-bg: #0b1220;
+            --app-surface: #111b2e;
+            --app-surface-soft: #172338;
+            --app-text: #e2e8f0;
             --app-muted: #94a3b8;
-            --app-border: #334155;
-            --app-striped: #1f2937;
-            --app-accent: #3b82f6;
+            --app-border: #2d3b52;
+            --app-striped: #0f1a2c;
+            --app-hover: #1a2b45;
+            --app-accent: #38bdf8;
+            --app-accent-2: #fb923c;
             --app-accent-contrast: #ffffff;
+            --app-gradient: linear-gradient(120deg, #38bdf8 0%, #fb923c 100%);
+            --app-navbar-bg: rgba(10, 18, 32, 0.88);
+            --app-bg-image:
+                radial-gradient(70rem 42rem at -8% -18%, rgba(56, 189, 248, 0.14), transparent 58%),
+                radial-gradient(56rem 30rem at 110% -10%, rgba(251, 146, 60, 0.12), transparent 54%),
+                linear-gradient(180deg, #0b1220 0%, #10192c 100%);
+            --app-card-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
 
-            --bs-link-color: #93c5fd;
-            --bs-link-hover-color: #bfdbfe;
-            --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28229, 231, 235, 0.85%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+            --bs-link-color: #7dd3fc;
+            --bs-link-hover-color: #bae6fd;
+            --bs-navbar-toggler-icon-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28226, 232, 240, 0.88%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
         }
 
         body {
             background-color: var(--app-bg);
+            background-image: var(--app-bg-image);
+            background-attachment: fixed;
             color: var(--app-text);
+            font-family: "Sora", "Segoe UI", sans-serif;
         }
 
-        .navbar,
-        .card,
-        .modal-content {
-            background-color: var(--app-surface);
+        h1,
+        h2,
+        h3,
+        .navbar-brand {
+            font-family: "Space Grotesk", "Sora", "Segoe UI", sans-serif;
+        }
+
+        h1 {
+            letter-spacing: -0.02em;
+            font-weight: 700;
+        }
+
+        .navbar {
+            background-color: var(--app-navbar-bg);
+            backdrop-filter: blur(12px);
             border-color: var(--app-border);
+            border-top: 0;
+            border-radius: 0 0 1rem 1rem;
+            margin: 0 0.75rem;
+            box-shadow: var(--app-card-shadow);
         }
 
         .navbar .nav-link,
@@ -57,8 +98,27 @@
             color: var(--app-text);
         }
 
+        .navbar .navbar-brand {
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .navbar .nav-link {
+            border-radius: 999px;
+            padding: 0.35rem 0.85rem !important;
+            transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+        }
+
+        .navbar .nav-link:hover {
+            background-color: var(--app-surface-soft);
+            transform: translateY(-1px);
+        }
+
         .navbar .nav-link.active {
             font-weight: 600;
+            color: #ffffff;
+            background: var(--app-gradient);
+            box-shadow: 0 6px 14px rgba(14, 165, 233, 0.33);
         }
 
         .text-muted,
@@ -66,15 +126,96 @@
             color: var(--app-muted) !important;
         }
 
+        .card,
+        .modal-content,
+        .table-responsive {
+            background-color: var(--app-surface);
+            border-color: var(--app-border);
+            box-shadow: var(--app-card-shadow);
+        }
+
+        .card,
+        .modal-content,
+        .table-responsive {
+            border-radius: 0.9rem;
+        }
+
         .form-control,
         .form-select {
             background-color: var(--app-surface);
             border-color: var(--app-border);
             color: var(--app-text);
+            border-radius: 0.7rem;
         }
 
         .form-control::placeholder {
             color: var(--app-muted);
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--app-accent);
+            box-shadow: 0 0 0 0.2rem rgba(14, 165, 233, 0.2);
+        }
+
+        .btn {
+            border-radius: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            transition: transform 0.14s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--app-gradient);
+            border: 0;
+            color: #ffffff;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(14, 165, 233, 0.34);
+        }
+
+        .btn-success {
+            background: linear-gradient(120deg, #16a34a 0%, #0ea5a4 100%);
+            border: 0;
+            color: #ffffff;
+        }
+
+        .btn-success:hover,
+        .btn-success:focus {
+            color: #ffffff;
+            box-shadow: 0 8px 16px rgba(22, 163, 74, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--app-surface-soft);
+            border-color: var(--app-border);
+            color: var(--app-text);
+        }
+
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            background-color: var(--app-striped);
+            border-color: var(--app-border);
+            color: var(--app-text);
+        }
+
+        .btn-outline-secondary {
+            color: var(--app-text);
+            border-color: var(--app-border);
+        }
+
+        .btn-outline-secondary:hover,
+        .btn-outline-secondary:focus {
+            color: var(--app-text);
+            background-color: var(--app-surface-soft);
+            border-color: var(--app-border);
         }
 
         .table {
@@ -97,18 +238,25 @@
             background-color: var(--app-striped);
         }
 
+        .table tbody tr:hover > * {
+            background-color: var(--app-hover);
+        }
+
+        .table thead th {
+            color: var(--app-muted);
+            text-transform: uppercase;
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            background-color: var(--app-surface-soft);
+        }
+
         .app-container {
-            margin-top: 1.25rem;
+            margin-top: 1.5rem;
         }
 
         .table-responsive {
             border: 1px solid var(--app-border);
-            border-radius: 0.5rem;
-            background-color: var(--app-surface);
-        }
-
-        .table thead th {
-            color: var(--app-text);
         }
 
         .pagination {
@@ -129,8 +277,55 @@
             --bs-pagination-disabled-border-color: var(--app-border);
         }
 
+        .alert {
+            border-radius: 0.8rem;
+        }
+
+        .app-alert {
+            border-left: 4px solid currentColor;
+            box-shadow: var(--app-card-shadow);
+        }
+
+        .favorite-btn {
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .favorite-star {
+            font-size: 1.55rem;
+            color: var(--app-muted);
+            display: inline-block;
+            transition: transform 0.15s ease, color 0.15s ease, text-shadow 0.15s ease;
+        }
+
+        .favorite-btn:hover .favorite-star,
+        .favorite-star:hover {
+            transform: scale(1.12);
+        }
+
+        .favorite-star.is-on {
+            color: #fbbf24;
+            text-shadow: 0 0 12px rgba(251, 191, 36, 0.34);
+        }
+
+        .favorite-star.is-off {
+            color: #94a3b8;
+        }
+
         canvas {
             color: var(--app-text) !important;
+        }
+
+        @media (max-width: 991.98px) {
+            .navbar {
+                margin: 0;
+                border-radius: 0;
+                border-left: 0;
+                border-right: 0;
+            }
         }
     </style>
     {% block head_extra %}{% endblock %}
