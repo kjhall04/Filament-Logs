@@ -1,4 +1,4 @@
-﻿from datetime import datetime
+from datetime import datetime
 import os
 
 from dotenv import load_dotenv
@@ -6,7 +6,7 @@ from flask import Flask, flash, jsonify, redirect, render_template, request, url
 
 from backend import data_manipulation, generate_barcode, log_data, settings_store, spreadsheet_stats
 from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD
-from backend.workbook_store import open_workbook
+from backend.workbook_store import list_inventory_rows, toggle_inventory_favorite
 
 load_dotenv()
 app = Flask(__name__)
@@ -86,10 +86,7 @@ def get_used_roll_map_settings(app_settings):
 
 
 def get_inventory_rows():
-    with open_workbook(write=False) as (_, inventory_sheet, __):
-        if inventory_sheet is None:
-            return []
-        return [row for row in inventory_sheet.iter_rows(min_row=2, values_only=True)]
+    return list_inventory_rows()
 
 
 def render_new_roll(step="info", **context):
@@ -209,8 +206,7 @@ def log_filament():
             flash(str(exc), "error")
             return render_template("log.html", form_data=form_data)
 
-        with open_workbook(write=False) as (_, inventory_sheet, __):
-            roll_weight_val = data_manipulation.get_roll_weight(barcode, inventory_sheet)
+        roll_weight_val = data_manipulation.get_roll_weight(barcode, None)
 
         if roll_weight_val is None:
             flash("Roll weight not found for this barcode.", "error")
@@ -289,30 +285,29 @@ def new_roll():
             )
 
         try:
-            with open_workbook(write=False) as (_, inventory_sheet, __):
-                barcode = generate_barcode.generate_filament_barcode(
+            barcode = generate_barcode.generate_filament_barcode(
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location,
+                sheet=None,
+            )
+
+            mapped_roll_weight = None
+            mapped_roll_weight_match = ""
+            if roll_state == "used":
+                mapped_roll_weight, mapped_roll_weight_match = data_manipulation.get_roll_weight_from_map(
+                    None,
                     brand=brand,
                     color=color,
                     material=material,
                     attribute_1=attr1,
                     attribute_2=attr2,
-                    location=location,
-                    sheet=inventory_sheet,
+                    max_fallback_level=map_fallback_level,
+                    min_samples=map_min_samples,
                 )
-
-                mapped_roll_weight = None
-                mapped_roll_weight_match = ""
-                if roll_state == "used":
-                    mapped_roll_weight, mapped_roll_weight_match = data_manipulation.get_roll_weight_from_map(
-                        None,
-                        brand=brand,
-                        color=color,
-                        material=material,
-                        attribute_1=attr1,
-                        attribute_2=attr2,
-                        max_fallback_level=map_fallback_level,
-                        min_samples=map_min_samples,
-                    )
         except ValueError as exc:
             flash(str(exc), "error")
             return render_new_roll(
@@ -552,26 +547,11 @@ def toggle_favorite():
     if not barcode:
         return jsonify({"error": "Missing barcode"}), 400
 
-    with open_workbook(write=True) as (_, inventory_sheet, __):
-        found = False
-        is_favorite = False
-        for row in inventory_sheet.iter_rows(min_row=2):
-            cell_barcode = row[1].value
-            if cell_barcode is None or str(cell_barcode).strip() != barcode:
-                continue
-
-            row_number = row[0].row
-            favorite_cell = inventory_sheet.cell(row=row_number, column=13)
-            current_value = str(favorite_cell.value).strip().lower() if favorite_cell.value else "false"
-            is_favorite = current_value != "true"
-            favorite_cell.value = "True" if is_favorite else "False"
-            found = True
-            break
-
-    if not found:
+    is_favorite = toggle_inventory_favorite(barcode)
+    if is_favorite is None:
         return jsonify({"error": "Barcode not found"}), 404
 
-    return jsonify({"is_favorite": is_favorite}), 200
+    return jsonify({"is_favorite": bool(is_favorite)}), 200
 
 
 @app.route("/favorites")

@@ -1,5 +1,7 @@
-﻿import json
+import json
 import os
+
+from backend.workbook_store import list_inventory_barcodes
 
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.normpath(os.path.join(BASE_DIR, "..", "data"))
@@ -70,8 +72,10 @@ def generate_filament_barcode(
     attribute_1: str,
     attribute_2: str,
     location: str,
-    sheet,
+    sheet=None,
 ) -> str:
+    _ = sheet  # Compatibility with older call sites.
+
     brand_mapping = load_json("brand_mapping.json")
     color_mapping = _flatten_color_mapping(load_json("color_mapping.json"))
     material_mapping = load_json("material_mapping.json")
@@ -104,10 +108,7 @@ def generate_filament_barcode(
         raise ValueError("Invalid selection for: " + ", ".join(missing))
 
     unique_ids = []
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        existing = ""
-        if row and len(row) > 1 and row[1] is not None:
-            existing = str(row[1]).strip()
+    for existing in list_inventory_barcodes():
         if existing.isdigit() and len(existing) == 17:
             try:
                 unique_ids.append(int(existing[-5:]))

@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "generated_at": "2026-02-18 09:38:39",
-  "source": "filament_inventory.xlsx",
+  "source": "filament_inventory.db",
   "levels": {
     "brand+color+material+attributes": {
       "3dhojor|green and black|pla|silk|dual color": {

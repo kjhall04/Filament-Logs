@@ -1,7 +1,9 @@
-﻿import json
+import json
 import os
 import struct
 import time
+
+from backend.workbook_store import get_roll_weight as get_roll_weight_db
 
 try:
     import hid
@@ -86,29 +88,11 @@ def get_starting_weight(timeout_sec: int = 5):
 
 def get_roll_weight(barcode: str, sheet):
     """
-    Return roll weight (float) for barcode from the sheet.
+    Return roll weight (float) for barcode from the SQLite store.
     Returns None when no numeric value can be found.
     """
-    if not barcode:
-        return None
-
-    needle = str(barcode).strip()
-    for row in sheet.iter_rows(min_row=2, values_only=True):
-        row_barcode = ""
-        if row and len(row) > 1 and row[1] is not None:
-            row_barcode = str(row[1]).strip()
-        if row_barcode != needle:
-            continue
-
-        for idx in (9, 7, 8, 10):
-            if len(row) > idx and row[idx] is not None:
-                try:
-                    return float(row[idx])
-                except Exception:
-                    continue
-        return None
-
-    return None
+    _ = sheet  # Retained for backwards compatibility with old callers.
+    return get_roll_weight_db(barcode)
 
 
 def _normalize_text(value):

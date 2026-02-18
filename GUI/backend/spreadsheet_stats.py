@@ -1,7 +1,7 @@
-﻿from datetime import datetime, timedelta
+from datetime import datetime, timedelta
 
 from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD
-from backend.workbook_store import open_workbook
+from backend.workbook_store import list_inventory_rows, open_database
 
 
 def _parse_timestamp(value):
@@ -38,55 +38,53 @@ def _to_int(value, default=0):
 
 def _inventory_records():
     records = []
-    with open_workbook(write=False) as (_, inventory_sheet, _):
-        if inventory_sheet is None:
-            return records
+    for row in list_inventory_rows():
+        barcode = ""
+        if row and len(row) > 1 and row[1] is not None:
+            barcode = str(row[1]).strip()
 
-        for row in inventory_sheet.iter_rows(min_row=2, values_only=True):
-            barcode = ""
-            if row and len(row) > 1 and row[1] is not None:
-                barcode = str(row[1]).strip()
-
-            last_logged = row[0] if len(row) > 0 else None
-            records.append(
-                {
-                    "last_logged": last_logged,
-                    "last_logged_dt": _parse_timestamp(last_logged),
-                    "barcode": barcode,
-                    "brand": row[2] if len(row) > 2 else None,
-                    "color": row[3] if len(row) > 3 else None,
-                    "material": row[4] if len(row) > 4 else None,
-                    "attribute_1": row[5] if len(row) > 5 else None,
-                    "attribute_2": row[6] if len(row) > 6 else None,
-                    "weight": _to_float(row[7], default=0.0) if len(row) > 7 else 0.0,
-                    "location": row[8] if len(row) > 8 else None,
-                    "roll_weight": _to_float(row[9]) if len(row) > 9 else None,
-                    "times_logged_out": _to_int(row[10], default=0) if len(row) > 10 else 0,
-                    "is_empty": str(row[11]).strip().lower() == "true" if len(row) > 11 else False,
-                    "is_favorite": str(row[12]).strip().lower() == "true" if len(row) > 12 else False,
-                }
-            )
+        last_logged = row[0] if len(row) > 0 else None
+        records.append(
+            {
+                "last_logged": last_logged,
+                "last_logged_dt": _parse_timestamp(last_logged),
+                "barcode": barcode,
+                "brand": row[2] if len(row) > 2 else None,
+                "color": row[3] if len(row) > 3 else None,
+                "material": row[4] if len(row) > 4 else None,
+                "attribute_1": row[5] if len(row) > 5 else None,
+                "attribute_2": row[6] if len(row) > 6 else None,
+                "weight": _to_float(row[7], default=0.0) if len(row) > 7 else 0.0,
+                "location": row[8] if len(row) > 8 else None,
+                "roll_weight": _to_float(row[9]) if len(row) > 9 else None,
+                "times_logged_out": _to_int(row[10], default=0) if len(row) > 10 else 0,
+                "is_empty": str(row[11]).strip().lower() == "true" if len(row) > 11 else False,
+                "is_favorite": str(row[12]).strip().lower() == "true" if len(row) > 12 else False,
+            }
+        )
 
     return records
 
 
 def _usage_counts_since(cutoff):
     counts = {}
-    with open_workbook(write=False) as (_, __, events_sheet):
-        if events_sheet is None:
-            return counts
+    with open_database(write=False) as conn:
+        rows = conn.execute(
+            """
+            SELECT timestamp, barcode
+            FROM usage_events
+            WHERE LOWER(COALESCE(event_type, '')) = 'log_usage'
+              AND barcode IS NOT NULL
+              AND TRIM(barcode) != ''
+            """
+        ).fetchall()
 
-        for row in events_sheet.iter_rows(min_row=2, values_only=True):
-            event_timestamp = _parse_timestamp(row[0] if len(row) > 0 else None)
-            event_type = str(row[1]).strip().lower() if len(row) > 1 and row[1] is not None else ""
-            barcode = str(row[2]).strip() if len(row) > 2 and row[2] is not None else ""
-
-            if event_type != "log_usage":
-                continue
-            if not barcode or event_timestamp is None or event_timestamp < cutoff:
-                continue
-
-            counts[barcode] = counts.get(barcode, 0) + 1
+    for row in rows:
+        event_timestamp = _parse_timestamp(row["timestamp"])
+        barcode = str(row["barcode"]).strip() if row["barcode"] is not None else ""
+        if not barcode or event_timestamp is None or event_timestamp < cutoff:
+            continue
+        counts[barcode] = counts.get(barcode, 0) + 1
 
     return counts
 

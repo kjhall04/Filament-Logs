@@ -1,8 +1,8 @@
-﻿from datetime import datetime
+from datetime import datetime
 
 from backend import generate_barcode
 from backend.config import EMPTY_THRESHOLD
-from backend.workbook_store import open_workbook
+from backend.workbook_store import normalize_text_case, open_database
 
 
 def _timestamp_now():
@@ -24,7 +24,7 @@ def _to_int(value, default=0):
 
 
 def _append_event(
-    events_sheet,
+    conn,
     timestamp,
     event_type,
     barcode,
@@ -41,11 +41,34 @@ def _append_event(
     times_logged_out,
     source,
 ):
-    if events_sheet is None:
-        return
+    brand = normalize_text_case(brand)
+    color = normalize_text_case(color)
+    material = normalize_text_case(material)
+    attr1 = normalize_text_case(attr1)
+    attr2 = normalize_text_case(attr2)
+    location = normalize_text_case(location)
 
-    events_sheet.append(
-        [
+    conn.execute(
+        """
+        INSERT INTO usage_events (
+            timestamp,
+            event_type,
+            barcode,
+            brand,
+            color,
+            material,
+            attribute_1,
+            attribute_2,
+            location,
+            input_weight,
+            roll_weight,
+            filament_amount,
+            delta_used,
+            times_logged_out,
+            source
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
             timestamp,
             event_type,
             barcode,
@@ -61,7 +84,7 @@ def _append_event(
             delta_used,
             times_logged_out,
             source,
-        ]
+        ),
     )
 
 
@@ -79,59 +102,94 @@ def log_filament_data_web(
     """
     timestamp = _timestamp_now()
     target_barcode = str(barcode).strip()
-
     threshold_value = _to_float(empty_threshold, default=EMPTY_THRESHOLD)
 
-    with open_workbook(write=True) as (_, inventory_sheet, events_sheet):
-        for row in inventory_sheet.iter_rows(min_row=2):
-            cell_barcode = row[1].value
-            if cell_barcode is None or str(cell_barcode).strip() != target_barcode:
-                continue
+    with open_database(write=True) as conn:
+        row = conn.execute(
+            """
+            SELECT
+                barcode,
+                brand,
+                color,
+                material,
+                attribute_1,
+                attribute_2,
+                location,
+                filament_amount,
+                roll_weight,
+                times_logged_out
+            FROM inventory
+            WHERE barcode = ?
+            LIMIT 1
+            """,
+            (target_barcode,),
+        ).fetchone()
+        if row is None:
+            return False
 
-            previous_amount = _to_float(row[7].value)
-            new_amount = _to_float(filament_amount, default=0.0)
-            new_amount = round(max(new_amount, 0.0), 2)
+        previous_amount = _to_float(row["filament_amount"])
+        new_amount = _to_float(filament_amount, default=0.0)
+        new_amount = round(max(new_amount, 0.0), 2)
 
-            row[0].value = timestamp
-            row[7].value = new_amount
+        times_logged_out = _to_int(row["times_logged_out"], default=0) + 1
+        is_empty = 1 if new_amount <= threshold_value else 0
 
-            times_logged_out = _to_int(row[10].value, default=0) + 1
-            row[10].value = times_logged_out
+        updated_roll_weight = _to_float(row["roll_weight"])
+        if roll_weight is not None:
+            parsed_roll_weight = _to_float(roll_weight)
+            if parsed_roll_weight is not None:
+                updated_roll_weight = round(parsed_roll_weight, 2)
 
-            row[11].value = "True" if new_amount <= threshold_value else "False"
+        conn.execute(
+            """
+            UPDATE inventory
+            SET
+                timestamp = ?,
+                filament_amount = ?,
+                roll_weight = ?,
+                times_logged_out = ?,
+                is_empty = ?
+            WHERE barcode = ?
+            """,
+            (
+                timestamp,
+                new_amount,
+                updated_roll_weight,
+                times_logged_out,
+                is_empty,
+                target_barcode,
+            ),
+        )
 
-            if roll_weight is not None:
-                parsed_roll_weight = _to_float(roll_weight)
-                if parsed_roll_weight is not None:
-                    row[9].value = round(parsed_roll_weight, 2)
+        delta_used = None
+        if previous_amount is not None:
+            delta_used = round(max(previous_amount - new_amount, 0.0), 2)
 
-            delta_used = None
-            if previous_amount is not None:
-                delta_used = round(max(previous_amount - new_amount, 0.0), 2)
+        input_weight_value = None
+        if total_weight is not None:
+            input_weight_value = round(_to_float(total_weight, default=0.0), 2)
 
-            _append_event(
-                events_sheet=events_sheet,
-                timestamp=timestamp,
-                event_type="log_usage",
-                barcode=target_barcode,
-                brand=row[2].value,
-                color=row[3].value,
-                material=row[4].value,
-                attr1=row[5].value,
-                attr2=row[6].value,
-                location=row[8].value,
-                input_weight=round(_to_float(total_weight, default=0.0), 2)
-                if total_weight is not None
-                else None,
-                roll_weight=round(_to_float(row[9].value, default=0.0), 2)
-                if row[9].value is not None
-                else None,
-                filament_amount=new_amount,
-                delta_used=delta_used,
-                times_logged_out=times_logged_out,
-                source=source,
-            )
-            return True
+        event_roll_weight = round(updated_roll_weight, 2) if updated_roll_weight is not None else None
+
+        _append_event(
+            conn=conn,
+            timestamp=timestamp,
+            event_type="log_usage",
+            barcode=target_barcode,
+            brand=row["brand"],
+            color=row["color"],
+            material=row["material"],
+            attr1=row["attribute_1"],
+            attr2=row["attribute_2"],
+            location=row["location"],
+            input_weight=input_weight_value,
+            roll_weight=event_roll_weight,
+            filament_amount=new_amount,
+            delta_used=delta_used,
+            times_logged_out=times_logged_out,
+            source=source,
+        )
+        return True
 
     return False
 
@@ -162,32 +220,55 @@ def add_new_roll_web(
         raise ValueError("Starting weight must be at least the configured filament amount.")
 
     filament_amount = round(starting_weight_value - roll_weight, 2)
-
     threshold_value = _to_float(empty_threshold, default=EMPTY_THRESHOLD)
 
-    with open_workbook(write=True) as (_, inventory_sheet, events_sheet):
-        if not barcode:
-            barcode = generate_barcode.generate_filament_barcode(
+    brand = normalize_text_case(brand)
+    color = normalize_text_case(color)
+    material = normalize_text_case(material)
+    attr1 = normalize_text_case(attr1)
+    attr2 = normalize_text_case(attr2)
+    location = normalize_text_case(location)
+
+    if not barcode:
+        barcode = generate_barcode.generate_filament_barcode(
+            brand,
+            color,
+            material,
+            attr1,
+            attr2,
+            location,
+            sheet=None,
+        )
+
+    barcode = str(barcode).strip()
+    with open_database(write=True) as conn:
+        existing = conn.execute(
+            "SELECT 1 FROM inventory WHERE barcode = ? LIMIT 1",
+            (barcode,),
+        ).fetchone()
+        if existing is not None:
+            raise ValueError("Barcode already exists. Please retry adding this roll.")
+
+        is_empty = 1 if filament_amount <= threshold_value else 0
+        conn.execute(
+            """
+            INSERT INTO inventory (
+                timestamp,
+                barcode,
                 brand,
                 color,
                 material,
-                attr1,
-                attr2,
+                attribute_1,
+                attribute_2,
+                filament_amount,
                 location,
-                inventory_sheet,
-            )
-
-        barcode = str(barcode).strip()
-        for row in inventory_sheet.iter_rows(min_row=2, values_only=True):
-            existing = ""
-            if row and len(row) > 1 and row[1] is not None:
-                existing = str(row[1]).strip()
-            if existing == barcode:
-                raise ValueError("Barcode already exists. Please retry adding this roll.")
-
-        is_empty = "True" if filament_amount <= threshold_value else "False"
-        inventory_sheet.append(
-            [
+                roll_weight,
+                times_logged_out,
+                is_empty,
+                is_favorite
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
                 timestamp,
                 barcode,
                 brand,
@@ -200,12 +281,12 @@ def add_new_roll_web(
                 roll_weight,
                 0,
                 is_empty,
-                "False",
-            ]
+                0,
+            ),
         )
 
         _append_event(
-            events_sheet=events_sheet,
+            conn=conn,
             timestamp=timestamp,
             event_type="new_roll",
             barcode=barcode,
