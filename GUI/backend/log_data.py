@@ -71,6 +71,7 @@ def log_filament_data_web(
     roll_weight=None,
     total_weight=None,
     source="web",
+    empty_threshold=EMPTY_THRESHOLD,
 ):
     """
     Update an existing roll identified by barcode and append a usage event.
@@ -78,6 +79,8 @@ def log_filament_data_web(
     """
     timestamp = _timestamp_now()
     target_barcode = str(barcode).strip()
+
+    threshold_value = _to_float(empty_threshold, default=EMPTY_THRESHOLD)
 
     with open_workbook(write=True) as (_, inventory_sheet, events_sheet):
         for row in inventory_sheet.iter_rows(min_row=2):
@@ -95,7 +98,7 @@ def log_filament_data_web(
             times_logged_out = _to_int(row[10].value, default=0) + 1
             row[10].value = times_logged_out
 
-            row[11].value = "True" if new_amount <= EMPTY_THRESHOLD else "False"
+            row[11].value = "True" if new_amount <= threshold_value else "False"
 
             if roll_weight is not None:
                 parsed_roll_weight = _to_float(roll_weight)
@@ -144,6 +147,7 @@ def add_new_roll_web(
     filament_amount_target,
     barcode=None,
     source="web",
+    empty_threshold=EMPTY_THRESHOLD,
 ):
     """
     Add a new roll row and append an event log row.
@@ -158,6 +162,8 @@ def add_new_roll_web(
         raise ValueError("Starting weight must be at least the configured filament amount.")
 
     filament_amount = round(starting_weight_value - roll_weight, 2)
+
+    threshold_value = _to_float(empty_threshold, default=EMPTY_THRESHOLD)
 
     with open_workbook(write=True) as (_, inventory_sheet, events_sheet):
         if not barcode:
@@ -179,7 +185,7 @@ def add_new_roll_web(
             if existing == barcode:
                 raise ValueError("Barcode already exists. Please retry adding this roll.")
 
-        is_empty = "True" if filament_amount <= EMPTY_THRESHOLD else "False"
+        is_empty = "True" if filament_amount <= threshold_value else "False"
         inventory_sheet.append(
             [
                 timestamp,

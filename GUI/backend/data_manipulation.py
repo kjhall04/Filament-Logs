@@ -14,11 +14,18 @@ FILAMENT_AMOUNT = 1000.0
 
 BASE_DIR = os.path.dirname(__file__)
 WEIGHT_MAPPING_PATH = os.path.join(BASE_DIR, "..", "data", "weight_mapping.json")
+WEIGHT_MAP_LEVEL_ORDER = (
+    "brand+color+material+attributes",
+    "brand+material+attributes",
+    "brand+material",
+    "material+attributes",
+    "material",
+)
 
 
-def read_scale_weight(timeout_sec: int = 5):
+def _read_scale_weight_once(timeout_sec: int):
     """
-    Read a single weight (grams) from the scale.
+    Read a single weight (grams) from the scale once.
     Returns float grams or None on timeout/error.
     """
     if hid is None:
@@ -56,6 +63,17 @@ def read_scale_weight(timeout_sec: int = 5):
                 device.close()
         except Exception:
             pass
+
+
+def read_scale_weight(timeout_sec: int = 5, retry_count: int = 1):
+    attempts = max(int(retry_count or 1), 1)
+    timeout_value = max(int(timeout_sec or 1), 1)
+
+    for _ in range(attempts):
+        reading = _read_scale_weight_once(timeout_sec=timeout_value)
+        if reading is not None:
+            return reading
+    return None
 
 
 def get_starting_weight(timeout_sec: int = 5):
@@ -104,6 +122,13 @@ def _to_float(value):
         return None
 
 
+def _to_int(value, default=0):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
 def _build_weight_key(*parts):
     return "|".join(_normalize_text(part) for part in parts)
 
@@ -116,7 +141,25 @@ def _load_weight_mapping_levels():
     return levels if isinstance(levels, dict) else {}
 
 
-def get_roll_weight_from_map(sheet, brand: str, color: str, material: str, attribute_1: str, attribute_2: str):
+def _parse_weight_mapping_entry(entry):
+    if isinstance(entry, dict):
+        weight = _to_float(entry.get("weight"))
+        samples = max(_to_int(entry.get("samples"), default=1), 1)
+        return weight, samples
+
+    return _to_float(entry), 1
+
+
+def get_roll_weight_from_map(
+    sheet,
+    brand: str,
+    color: str,
+    material: str,
+    attribute_1: str,
+    attribute_2: str,
+    max_fallback_level: str = "material",
+    min_samples: int = 1,
+):
     """
     Estimate roll weight for a used roll using weight_mapping.json.
     Returns (weight, match_level) where weight is rounded to 2 decimals.
@@ -150,12 +193,22 @@ def get_roll_weight_from_map(sheet, brand: str, color: str, material: str, attri
         ("material", _build_weight_key(target_material)),
     )
 
-    for level_name, level_key in queries:
+    fallback = _normalize_text(max_fallback_level)
+    if fallback not in WEIGHT_MAP_LEVEL_ORDER:
+        fallback = "material"
+    max_index = WEIGHT_MAP_LEVEL_ORDER.index(fallback)
+    required_samples = max(_to_int(min_samples, default=1), 1)
+
+    for idx, (level_name, level_key) in enumerate(queries):
+        if idx > max_index:
+            break
         level_map = levels.get(level_name)
         if not isinstance(level_map, dict):
             continue
-        mapped_weight = _to_float(level_map.get(level_key))
+        mapped_weight, mapped_samples = _parse_weight_mapping_entry(level_map.get(level_key))
         if mapped_weight is None or mapped_weight <= 0:
+            continue
+        if mapped_samples < required_samples:
             continue
         return round(float(mapped_weight), 2), level_name
 

@@ -1,6 +1,6 @@
 ﻿from datetime import datetime, timedelta
 
-from backend.config import LOW_THRESHOLD
+from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD
 from backend.workbook_store import open_workbook
 
 
@@ -132,12 +132,15 @@ def get_most_popular_filaments(top_n: int = 10, weeks: int | None = None):
     ]
 
 
-def get_low_or_empty_filaments(low_threshold: float = LOW_THRESHOLD):
+def get_low_or_empty_filaments(
+    low_threshold: float = LOW_THRESHOLD, empty_threshold: float = EMPTY_THRESHOLD
+):
     records = _inventory_records()
     results = []
 
     for record in records:
-        if record["is_empty"] or record["weight"] < low_threshold:
+        is_empty = record["is_empty"] or record["weight"] <= empty_threshold
+        if is_empty or record["weight"] < low_threshold:
             results.append(
                 {
                     "brand": record["brand"],
@@ -153,9 +156,11 @@ def get_low_or_empty_filaments(low_threshold: float = LOW_THRESHOLD):
     return results
 
 
-def get_empty_rolls():
+def get_empty_rolls(empty_threshold: float = EMPTY_THRESHOLD):
     records = _inventory_records()
-    empty_records = [record for record in records if record["is_empty"]]
+    empty_records = [
+        record for record in records if record["is_empty"] or record["weight"] <= empty_threshold
+    ]
     empty_records.sort(
         key=lambda item: item["last_logged_dt"] if item["last_logged_dt"] is not None else datetime.min,
         reverse=True,

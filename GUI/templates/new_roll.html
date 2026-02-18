@@ -183,7 +183,7 @@
 {% block scripts %}
 {% if step == "weight" %}
 <script>
-document.getElementById("getWeightBtn").addEventListener("click", async function () {
+async function fetchScaleWeight() {
     const status = document.getElementById("scaleStatus");
     status.textContent = "Reading from scale...";
 
@@ -201,7 +201,17 @@ document.getElementById("getWeightBtn").addEventListener("click", async function
     } catch (_) {
         status.textContent = "Unable to reach the scale endpoint.";
     }
-});
+}
+
+document.getElementById("getWeightBtn").addEventListener("click", fetchScaleWeight);
+
+if (
+    window.APP_SETTINGS &&
+    window.APP_SETTINGS.auto_read_scale_on_weight_step &&
+    !document.getElementById("weight").value.trim()
+) {
+    fetchScaleWeight();
+}
 </script>
 {% endif %}
 {% endblock %}

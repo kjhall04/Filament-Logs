@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 
 from backend import data_manipulation, generate_barcode, log_data, settings_store, spreadsheet_stats
-from backend.config import LOW_THRESHOLD
+from backend.config import EMPTY_THRESHOLD, LOW_THRESHOLD
 from backend.workbook_store import open_workbook
 
 load_dotenv()
@@ -47,6 +47,44 @@ def parse_roll_state(value):
     return normalized if normalized in ("new", "used") else "new"
 
 
+def parse_int_setting(value, default, min_value, max_value):
+    try:
+        parsed = int(float(value))
+    except (TypeError, ValueError):
+        return default
+    return max(min_value, min(max_value, parsed))
+
+
+def parse_float_setting(value, default, min_value, max_value):
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return default
+    return max(min_value, min(max_value, parsed))
+
+
+def get_threshold_settings(app_settings):
+    low_threshold = parse_float_setting(
+        app_settings.get("low_threshold_g"), LOW_THRESHOLD, 0.0, 10000.0
+    )
+    empty_threshold = parse_float_setting(
+        app_settings.get("empty_threshold_g"), EMPTY_THRESHOLD, 0.0, 1000.0
+    )
+    return low_threshold, empty_threshold
+
+
+def get_scale_read_settings(app_settings):
+    timeout_sec = parse_int_setting(app_settings.get("scale_timeout_sec"), 5, 1, 60)
+    retry_count = parse_int_setting(app_settings.get("scale_retry_count"), 2, 1, 10)
+    return timeout_sec, retry_count
+
+
+def get_used_roll_map_settings(app_settings):
+    fallback_level = str(app_settings.get("used_roll_map_fallback_level", "material")).strip().lower()
+    min_samples = parse_int_setting(app_settings.get("used_roll_map_min_samples"), 1, 1, 1000)
+    return fallback_level, min_samples
+
+
 def get_inventory_rows():
     with open_workbook(write=False) as (_, inventory_sheet, __):
         if inventory_sheet is None:
@@ -73,7 +111,7 @@ def render_new_roll(step="info", **context):
         "location": app_settings.get("default_location", "Lab"),
         "barcode": "",
         "scale_weight": "",
-        "roll_state": "new",
+        "roll_state": parse_roll_state(app_settings.get("default_roll_condition", "new")),
         "mapped_roll_weight": None,
         "mapped_roll_weight_match": "",
     }
@@ -133,13 +171,20 @@ def popular_filaments():
 
 @app.route("/low_empty")
 def low_empty_filaments():
-    low_empty = spreadsheet_stats.get_low_or_empty_filaments()
+    app_settings = settings_store.load_settings()
+    low_threshold, empty_threshold = get_threshold_settings(app_settings)
+    low_empty = spreadsheet_stats.get_low_or_empty_filaments(
+        low_threshold=low_threshold,
+        empty_threshold=empty_threshold,
+    )
     return render_template("low_empty.html", filaments=low_empty)
 
 
 @app.route("/empty_rolls")
 def empty_rolls():
-    empty = spreadsheet_stats.get_empty_rolls()
+    app_settings = settings_store.load_settings()
+    _, empty_threshold = get_threshold_settings(app_settings)
+    empty = spreadsheet_stats.get_empty_rolls(empty_threshold=empty_threshold)
     return render_template("empty_rolls.html", rolls=empty)
 
 
@@ -147,6 +192,7 @@ def empty_rolls():
 def log_filament():
     form_data = {"barcode": "", "weight": ""}
     app_settings = settings_store.load_settings()
+    low_threshold, empty_threshold = get_threshold_settings(app_settings)
 
     if request.method == "POST":
         barcode = request.form.get("barcode", "").strip()
@@ -181,15 +227,16 @@ def log_filament():
             roll_weight=roll_weight_val,
             total_weight=measured_weight,
             source="web_log",
+            empty_threshold=empty_threshold,
         )
         if not updated:
             flash("Barcode not found. Please add this roll first.", "error")
             return render_template("log.html", form_data=form_data)
 
         flash(f"Filament usage logged. Remaining amount: {filament_amount:.2f} g", "success")
-        if app_settings.get("low_stock_alerts", True) and filament_amount < LOW_THRESHOLD:
+        if app_settings.get("low_stock_alerts", True) and filament_amount < low_threshold:
             flash(
-                f"Low-stock warning: this roll is under {LOW_THRESHOLD:.0f} g.",
+                f"Low-stock warning: this roll is under {low_threshold:.0f} g.",
                 "warning",
             )
         return redirect(url_for("index"))
@@ -199,7 +246,9 @@ def log_filament():
 
 @app.route("/api/scale_weight")
 def api_scale_weight():
-    weight = data_manipulation.read_scale_weight(timeout_sec=5)
+    app_settings = settings_store.load_settings()
+    timeout_sec, retry_count = get_scale_read_settings(app_settings)
+    weight = data_manipulation.read_scale_weight(timeout_sec=timeout_sec, retry_count=retry_count)
     if weight is None:
         return jsonify({"error": "Scale unavailable"}), 503
     return jsonify({"weight": round(float(weight), 2)})
@@ -208,6 +257,12 @@ def api_scale_weight():
 @app.route("/new_roll", methods=["GET", "POST"])
 def new_roll():
     app_settings = settings_store.load_settings()
+    _, empty_threshold = get_threshold_settings(app_settings)
+    scale_timeout_sec, scale_retry_count = get_scale_read_settings(app_settings)
+    map_fallback_level, map_min_samples = get_used_roll_map_settings(app_settings)
+    negative_filament_policy = str(app_settings.get("negative_filament_policy", "block")).strip().lower()
+    if negative_filament_policy not in settings_store.NEGATIVE_FILAMENT_POLICY_OPTIONS:
+        negative_filament_policy = "block"
 
     if request.method == "POST" and "step" not in request.form:
         brand = request.form.get("brand", "").strip()
@@ -216,7 +271,9 @@ def new_roll():
         attr1 = request.form.get("attribute_1", "").strip()
         attr2 = request.form.get("attribute_2", "").strip()
         location = request.form.get("location", app_settings.get("default_location", "Lab")).strip()
-        roll_state = parse_roll_state(request.form.get("roll_state", "new"))
+        roll_state = parse_roll_state(
+            request.form.get("roll_state", app_settings.get("default_roll_condition", "new"))
+        )
 
         if not brand or not color or not material:
             flash("Brand, color, and material are required.", "error")
@@ -253,6 +310,8 @@ def new_roll():
                         material=material,
                         attribute_1=attr1,
                         attribute_2=attr2,
+                        max_fallback_level=map_fallback_level,
+                        min_samples=map_min_samples,
                     )
         except ValueError as exc:
             flash(str(exc), "error")
@@ -269,7 +328,10 @@ def new_roll():
 
         if roll_state == "used" and mapped_roll_weight is None:
             flash(
-                "No matching roll weight was found in weight_mapping.json for this used-roll profile.",
+                (
+                    "No matching roll weight was found in weight_mapping.json for this used-roll profile. "
+                    "Try relaxing fallback level or lowering min samples in Settings."
+                ),
                 "error",
             )
             return render_new_roll(
@@ -283,7 +345,10 @@ def new_roll():
                 roll_state=roll_state,
             )
 
-        scale_weight = data_manipulation.read_scale_weight(timeout_sec=4)
+        scale_weight = data_manipulation.read_scale_weight(
+            timeout_sec=scale_timeout_sec,
+            retry_count=scale_retry_count,
+        )
         return render_new_roll(
             step="weight",
             barcode=barcode,
@@ -308,7 +373,9 @@ def new_roll():
         location = request.form.get("location", app_settings.get("default_location", "Lab")).strip()
         barcode = request.form.get("barcode", "").strip()
         weight_text = request.form.get("weight", "").strip()
-        roll_state = parse_roll_state(request.form.get("roll_state", "new"))
+        roll_state = parse_roll_state(
+            request.form.get("roll_state", app_settings.get("default_roll_condition", "new"))
+        )
 
         mapped_roll_weight = None
         mapped_roll_weight_match = ""
@@ -320,6 +387,8 @@ def new_roll():
                 material=material,
                 attribute_1=attr1,
                 attribute_2=attr2,
+                max_fallback_level=map_fallback_level,
+                min_samples=map_min_samples,
             )
 
         if not barcode:
@@ -360,7 +429,10 @@ def new_roll():
         if roll_state == "used":
             if mapped_roll_weight is None:
                 flash(
-                    "No matching roll weight was found in weight_mapping.json for this used-roll profile.",
+                    (
+                        "No matching roll weight was found in weight_mapping.json for this used-roll profile. "
+                        "Try relaxing fallback level or lowering min samples in Settings."
+                    ),
                     "error",
                 )
                 return render_new_roll(
@@ -380,24 +452,35 @@ def new_roll():
 
             filament_amount_target = round(starting_weight - mapped_roll_weight, 2)
             if filament_amount_target < 0:
-                flash(
-                    f"Current weight is below mapped roll weight ({mapped_roll_weight:.2f} g).",
-                    "error",
-                )
-                return render_new_roll(
-                    step="weight",
-                    barcode=barcode,
-                    brand=brand,
-                    color=color,
-                    material=material,
-                    attribute_1=attr1,
-                    attribute_2=attr2,
-                    location=location,
-                    scale_weight=weight_text,
-                    roll_state=roll_state,
-                    mapped_roll_weight=mapped_roll_weight,
-                    mapped_roll_weight_match=mapped_roll_weight_match,
-                )
+                if negative_filament_policy == "block":
+                    flash(
+                        f"Current weight is below mapped roll weight ({mapped_roll_weight:.2f} g).",
+                        "error",
+                    )
+                    return render_new_roll(
+                        step="weight",
+                        barcode=barcode,
+                        brand=brand,
+                        color=color,
+                        material=material,
+                        attribute_1=attr1,
+                        attribute_2=attr2,
+                        location=location,
+                        scale_weight=weight_text,
+                        roll_state=roll_state,
+                        mapped_roll_weight=mapped_roll_weight,
+                        mapped_roll_weight_match=mapped_roll_weight_match,
+                    )
+
+                filament_amount_target = 0.0
+                if negative_filament_policy == "warn":
+                    flash(
+                        (
+                            "Current weight is below mapped roll weight "
+                            f"({mapped_roll_weight:.2f} g). Continuing with 0.00 g filament."
+                        ),
+                        "warning",
+                    )
             source = "web_new_roll_used"
         elif starting_weight < filament_amount_target:
             flash(
@@ -431,6 +514,7 @@ def new_roll():
                 filament_amount_target=filament_amount_target,
                 barcode=barcode,
                 source=source,
+                empty_threshold=empty_threshold,
             )
         except ValueError as exc:
             flash(str(exc), "error")
@@ -493,6 +577,8 @@ def toggle_favorite():
 @app.route("/favorites")
 def favorites():
     rows = get_inventory_rows()
+    app_settings = settings_store.load_settings()
+    low_threshold, _ = get_threshold_settings(app_settings)
 
     def key_norm(value):
         return str(value).strip().lower() if value is not None else ""
@@ -527,7 +613,7 @@ def favorites():
         entry["total"] += 1
 
         amount = parse_number(row[7] if len(row) > 7 else None)
-        if amount is not None and amount < LOW_THRESHOLD:
+        if amount is not None and amount < low_threshold:
             entry["low"] += 1
 
     unique_favorites = {}
@@ -581,7 +667,38 @@ def settings():
             "filament_amount_g": request.form.get(
                 "filament_amount_g", current.get("filament_amount_g", 1000.0)
             ),
+            "low_threshold_g": request.form.get(
+                "low_threshold_g", current.get("low_threshold_g", LOW_THRESHOLD)
+            ),
+            "empty_threshold_g": request.form.get(
+                "empty_threshold_g", current.get("empty_threshold_g", EMPTY_THRESHOLD)
+            ),
+            "default_roll_condition": request.form.get(
+                "default_roll_condition", current.get("default_roll_condition", "new")
+            ),
+            "used_roll_map_fallback_level": request.form.get(
+                "used_roll_map_fallback_level",
+                current.get("used_roll_map_fallback_level", "material"),
+            ),
+            "used_roll_map_min_samples": request.form.get(
+                "used_roll_map_min_samples", current.get("used_roll_map_min_samples", 1)
+            ),
+            "scale_timeout_sec": request.form.get(
+                "scale_timeout_sec", current.get("scale_timeout_sec", 5)
+            ),
+            "scale_retry_count": request.form.get(
+                "scale_retry_count", current.get("scale_retry_count", 2)
+            ),
+            "negative_filament_policy": request.form.get(
+                "negative_filament_policy", current.get("negative_filament_policy", "block")
+            ),
+            "backup_retention_days": request.form.get(
+                "backup_retention_days", current.get("backup_retention_days", 30)
+            ),
             "low_stock_alerts": request.form.get("low_stock_alerts") == "on",
+            "auto_read_scale_on_weight_step": request.form.get("auto_read_scale_on_weight_step")
+            == "on",
+            "auto_backup_on_write": request.form.get("auto_backup_on_write") == "on",
         }
         settings_store.save_settings(updates)
         flash("Settings saved.", "success")
@@ -592,6 +709,9 @@ def settings():
         settings=current,
         theme_options=settings_store.THEME_OPTIONS,
         alert_mode_options=settings_store.ALERT_MODE_OPTIONS,
+        roll_condition_options=settings_store.ROLL_CONDITION_OPTIONS,
+        used_roll_map_level_options=settings_store.USED_ROLL_MAP_LEVEL_OPTIONS,
+        negative_filament_policy_options=settings_store.NEGATIVE_FILAMENT_POLICY_OPTIONS,
     )
 
 

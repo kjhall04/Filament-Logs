@@ -11,13 +11,20 @@ Data is stored in an Excel workbook with an inventory sheet plus usage event his
 - Scale integration through `GET /api/scale_weight` (manual entry still supported)
 - Event history sheet (`UsageEvents`) for time-window popularity analytics
 - Settings page for:
+  - General/Advanced sections
   - Light/Dark theme
   - Alert handling (`all`, `errors_only`, `silent`, `browser`)
   - Rows per page
   - Default new-roll location
+  - Default roll condition (`new`/`used`)
   - Default popularity window (weeks)
   - Configured filament amount for new-roll calculations
+  - Adjustable low/empty thresholds
   - Low-stock warning toggle
+  - Used-roll map fallback depth + minimum sample count
+  - Scale timeout/retry and auto-read on add-roll weight step
+  - Negative-filament policy for used-roll mapped weights
+  - Optional workbook auto-backup + retention days
 - Optional file locking (`portalocker`) for safer concurrent workbook access
 
 ## Quick Start

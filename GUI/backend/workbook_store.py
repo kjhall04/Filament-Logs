@@ -1,4 +1,6 @@
 ﻿import os
+import shutil
+from datetime import datetime
 from contextlib import contextmanager
 
 import openpyxl
@@ -48,9 +50,74 @@ except Exception:
     portalocker = None
 
 
+def _to_bool(value, default=False):
+    if value is None:
+        return default
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return bool(value)
+
+
+def _to_int(value, default):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
 def _ensure_parent_dir():
     parent = os.path.dirname(EXCEL_PATH) or "."
     os.makedirs(parent, exist_ok=True)
+
+
+def _load_backup_preferences():
+    try:
+        from backend import settings_store
+
+        settings = settings_store.load_settings()
+    except Exception:
+        return False, 30
+
+    enabled = _to_bool(settings.get("auto_backup_on_write"), False)
+    retention_days = _to_int(settings.get("backup_retention_days"), 30)
+    retention_days = max(1, min(retention_days, 3650))
+    return enabled, retention_days
+
+
+def _cleanup_old_backups(backup_dir, retention_days):
+    cutoff = datetime.now().timestamp() - float(retention_days) * 86400.0
+    try:
+        for name in os.listdir(backup_dir):
+            if not name.lower().endswith(".xlsx"):
+                continue
+            path = os.path.join(backup_dir, name)
+            try:
+                if os.path.getmtime(path) < cutoff:
+                    os.remove(path)
+            except Exception:
+                continue
+    except Exception:
+        return
+
+
+def _backup_workbook(retention_days):
+    if not os.path.exists(EXCEL_PATH):
+        return
+
+    workbook_dir = os.path.dirname(EXCEL_PATH) or "."
+    backup_dir = os.path.join(workbook_dir, "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+
+    base_name = os.path.splitext(os.path.basename(EXCEL_PATH))[0]
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = os.path.join(backup_dir, f"{base_name}_{timestamp}.xlsx")
+
+    try:
+        shutil.copy2(EXCEL_PATH, backup_path)
+    except Exception:
+        return
+
+    _cleanup_old_backups(backup_dir, retention_days)
 
 
 def _ensure_headers(sheet, headers):
@@ -142,6 +209,9 @@ def open_workbook(write=False):
         try:
             yield workbook, inventory, events
             if write:
+                backup_enabled, backup_retention_days = _load_backup_preferences()
+                if backup_enabled:
+                    _backup_workbook(backup_retention_days)
                 workbook.save(EXCEL_PATH)
         finally:
             workbook.close()
