@@ -30,7 +30,8 @@
         "044": "Teal",
         "045": "Aqua Blue",
         "046": "Sparkle Blue",
-        "047": "Dark Blue"
+        "047": "Dark Blue",
+        "048": "Digital Blue"
     },
     "Green": {
         "061": "Green",
@@ -46,7 +47,8 @@
         "071": "Chartreuse",
         "072": "Shamrock Green",
         "073": "Dark Gray Green",
-        "074": "Dark Green"
+        "074": "Dark Green",
+        "075": "Black Forest Green"
     },
     "Yellow": {
         "091": "Yellow",
@@ -110,7 +112,8 @@
         "220": "Bronze",
         "221": "Army Beige",
         "222": "Khaki",
-        "223": "Light Khaki"
+        "223": "Light Khaki",
+        "224": "Army Brown"
     },
     "Black": {
         "241": "Black",
@@ -155,7 +158,10 @@
         "408": "Black and White",
         "409": "Gray and Teal",
         "410": "Green and Black",
-        "411": "Yellow and Red"
+        "411": "Yellow and Red",
+        "412": "Teal and Yellow",
+        "413": "Silver and Gold",
+        "414": "Gold and Silver"
     },
     "Triple Color": {
         "501": "Red, White, and Blue",
