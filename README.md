@@ -46,6 +46,7 @@ Data is stored in an Excel workbook with an inventory sheet plus usage event his
   - `GUI/data/color_mapping.json`
   - `GUI/data/material_mapping.json`
   - `GUI/data/attribute_mapping.json`
+  - `GUI/data/weight_mapping.json` (used-roll weight map)
 
 ## Environment Variables
 

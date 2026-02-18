@@ -42,6 +42,11 @@ def parse_timestamp(value):
     return datetime.min
 
 
+def parse_roll_state(value):
+    normalized = str(value or "").strip().lower()
+    return normalized if normalized in ("new", "used") else "new"
+
+
 def get_inventory_rows():
     with open_workbook(write=False) as (_, inventory_sheet, __):
         if inventory_sheet is None:
@@ -68,6 +73,9 @@ def render_new_roll(step="info", **context):
         "location": app_settings.get("default_location", "Lab"),
         "barcode": "",
         "scale_weight": "",
+        "roll_state": "new",
+        "mapped_roll_weight": None,
+        "mapped_roll_weight_match": "",
     }
     template_context.update(context)
     return render_template("new_roll.html", **template_context)
@@ -208,6 +216,7 @@ def new_roll():
         attr1 = request.form.get("attribute_1", "").strip()
         attr2 = request.form.get("attribute_2", "").strip()
         location = request.form.get("location", app_settings.get("default_location", "Lab")).strip()
+        roll_state = parse_roll_state(request.form.get("roll_state", "new"))
 
         if not brand or not color or not material:
             flash("Brand, color, and material are required.", "error")
@@ -219,6 +228,7 @@ def new_roll():
                 attribute_1=attr1,
                 attribute_2=attr2,
                 location=location,
+                roll_state=roll_state,
             )
 
         try:
@@ -232,6 +242,18 @@ def new_roll():
                     location=location,
                     sheet=inventory_sheet,
                 )
+
+                mapped_roll_weight = None
+                mapped_roll_weight_match = ""
+                if roll_state == "used":
+                    mapped_roll_weight, mapped_roll_weight_match = data_manipulation.get_roll_weight_from_map(
+                        None,
+                        brand=brand,
+                        color=color,
+                        material=material,
+                        attribute_1=attr1,
+                        attribute_2=attr2,
+                    )
         except ValueError as exc:
             flash(str(exc), "error")
             return render_new_roll(
@@ -242,6 +264,23 @@ def new_roll():
                 attribute_1=attr1,
                 attribute_2=attr2,
                 location=location,
+                roll_state=roll_state,
+            )
+
+        if roll_state == "used" and mapped_roll_weight is None:
+            flash(
+                "No matching roll weight was found in weight_mapping.json for this used-roll profile.",
+                "error",
+            )
+            return render_new_roll(
+                step="info",
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+                location=location,
+                roll_state=roll_state,
             )
 
         scale_weight = data_manipulation.read_scale_weight(timeout_sec=4)
@@ -255,6 +294,9 @@ def new_roll():
             attribute_2=attr2,
             location=location,
             scale_weight="" if scale_weight is None else f"{scale_weight:.2f}",
+            roll_state=roll_state,
+            mapped_roll_weight=mapped_roll_weight,
+            mapped_roll_weight_match=mapped_roll_weight_match,
         )
 
     if request.method == "POST" and request.form.get("step") == "weight":
@@ -266,6 +308,19 @@ def new_roll():
         location = request.form.get("location", app_settings.get("default_location", "Lab")).strip()
         barcode = request.form.get("barcode", "").strip()
         weight_text = request.form.get("weight", "").strip()
+        roll_state = parse_roll_state(request.form.get("roll_state", "new"))
+
+        mapped_roll_weight = None
+        mapped_roll_weight_match = ""
+        if roll_state == "used":
+            mapped_roll_weight, mapped_roll_weight_match = data_manipulation.get_roll_weight_from_map(
+                None,
+                brand=brand,
+                color=color,
+                material=material,
+                attribute_1=attr1,
+                attribute_2=attr2,
+            )
 
         if not barcode:
             flash("Missing barcode. Please generate a barcode first.", "error")
@@ -277,6 +332,7 @@ def new_roll():
                 attribute_1=attr1,
                 attribute_2=attr2,
                 location=location,
+                roll_state=roll_state,
             )
 
         try:
@@ -293,12 +349,59 @@ def new_roll():
                 attribute_2=attr2,
                 location=location,
                 scale_weight=weight_text,
+                roll_state=roll_state,
+                mapped_roll_weight=mapped_roll_weight,
+                mapped_roll_weight_match=mapped_roll_weight_match,
             )
 
-        configured_amount = float(app_settings.get("filament_amount_g", 1000.0))
-        if starting_weight < configured_amount:
+        source = "web_new_roll"
+        filament_amount_target = float(app_settings.get("filament_amount_g", 1000.0))
+
+        if roll_state == "used":
+            if mapped_roll_weight is None:
+                flash(
+                    "No matching roll weight was found in weight_mapping.json for this used-roll profile.",
+                    "error",
+                )
+                return render_new_roll(
+                    step="weight",
+                    barcode=barcode,
+                    brand=brand,
+                    color=color,
+                    material=material,
+                    attribute_1=attr1,
+                    attribute_2=attr2,
+                    location=location,
+                    scale_weight=weight_text,
+                    roll_state=roll_state,
+                    mapped_roll_weight=mapped_roll_weight,
+                    mapped_roll_weight_match=mapped_roll_weight_match,
+                )
+
+            filament_amount_target = round(starting_weight - mapped_roll_weight, 2)
+            if filament_amount_target < 0:
+                flash(
+                    f"Current weight is below mapped roll weight ({mapped_roll_weight:.2f} g).",
+                    "error",
+                )
+                return render_new_roll(
+                    step="weight",
+                    barcode=barcode,
+                    brand=brand,
+                    color=color,
+                    material=material,
+                    attribute_1=attr1,
+                    attribute_2=attr2,
+                    location=location,
+                    scale_weight=weight_text,
+                    roll_state=roll_state,
+                    mapped_roll_weight=mapped_roll_weight,
+                    mapped_roll_weight_match=mapped_roll_weight_match,
+                )
+            source = "web_new_roll_used"
+        elif starting_weight < filament_amount_target:
             flash(
-                f"Starting weight must be at least {configured_amount:.2f} g based on current settings.",
+                f"Starting weight must be at least {filament_amount_target:.2f} g based on current settings.",
                 "error",
             )
             return render_new_roll(
@@ -311,6 +414,9 @@ def new_roll():
                 attribute_2=attr2,
                 location=location,
                 scale_weight=weight_text,
+                roll_state=roll_state,
+                mapped_roll_weight=mapped_roll_weight,
+                mapped_roll_weight_match=mapped_roll_weight_match,
             )
 
         try:
@@ -322,9 +428,9 @@ def new_roll():
                 attr2=attr2,
                 location=location,
                 starting_weight=starting_weight,
-                filament_amount_target=configured_amount,
+                filament_amount_target=filament_amount_target,
                 barcode=barcode,
-                source="web_new_roll",
+                source=source,
             )
         except ValueError as exc:
             flash(str(exc), "error")
@@ -338,6 +444,9 @@ def new_roll():
                 attribute_2=attr2,
                 location=location,
                 scale_weight=weight_text,
+                roll_state=roll_state,
+                mapped_roll_weight=mapped_roll_weight,
+                mapped_roll_weight_match=mapped_roll_weight_match,
             )
 
         flash(

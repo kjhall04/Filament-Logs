@@ -123,6 +123,15 @@
             {% endfor %}
         </datalist>
     </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="roll_state">Roll Condition</label>
+        <select id="roll_state" name="roll_state" class="form-select">
+            <option value="new" {% if roll_state != 'used' %}selected{% endif %}>New / Full Roll</option>
+            <option value="used" {% if roll_state == 'used' %}selected{% endif %}>Used / Partial Roll</option>
+        </select>
+        <small class="form-text">Used rolls estimate roll weight from weight_mapping.json.</small>
+    </div>
 </form>
 {% elif step == "weight" %}
 <div class="mb-3 d-flex gap-2">
@@ -134,6 +143,15 @@
     <strong>Barcode:</strong> {{ barcode }}
 </div>
 
+{% if roll_state == "used" and mapped_roll_weight is not none %}
+<div class="alert alert-success">
+    <strong>Used roll map:</strong> {{ '%.2f'|format(mapped_roll_weight) }} g
+    {% if mapped_roll_weight_match %}
+    (match: {{ mapped_roll_weight_match }})
+    {% endif %}
+</div>
+{% endif %}
+
 <form method="post" id="weightForm" autocomplete="off" novalidate>
     <input type="hidden" name="step" value="weight">
     <input type="hidden" name="brand" value="{{ brand }}">
@@ -143,6 +161,7 @@
     <input type="hidden" name="attribute_2" value="{{ attribute_2 }}">
     <input type="hidden" name="location" value="{{ location }}">
     <input type="hidden" name="barcode" value="{{ barcode }}">
+    <input type="hidden" name="roll_state" value="{{ roll_state }}">
 
     <div class="mb-3">
         <label class="form-label" for="weight">Current Weight (g)</label>
@@ -150,7 +169,11 @@
             <input type="text" id="weight" name="weight" class="form-control" value="{{ scale_weight|default('', true) }}" autocomplete="off">
             <button class="btn btn-outline-secondary" type="button" id="getWeightBtn">Get Weight</button>
         </div>
+        {% if roll_state == "used" and mapped_roll_weight is not none %}
+        <small class="form-text">Remaining filament will be calculated from current weight minus mapped roll weight.</small>
+        {% else %}
         <small class="form-text">Configured filament amount in settings: {{ '%.2f'|format(app_settings.filament_amount_g) }} g.</small>
+        {% endif %}
         <div id="scaleStatus" class="form-text"></div>
     </div>
 </form>

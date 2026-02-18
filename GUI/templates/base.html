@@ -22,6 +22,8 @@
             --app-accent-rgb: 32, 24, 112;
             --app-accent-2: #88c038;
             --app-accent-2-rgb: 136, 192, 56;
+            --app-button-solid: #6caf33;
+            --app-button-solid-hover: #5d9a2c;
             --app-accent-contrast: #ffffff;
             --app-gradient: linear-gradient(120deg, #201870 0%, #88c038 100%);
             --app-navbar-bg: rgba(255, 255, 255, 0.9);
@@ -52,6 +54,8 @@
             --app-accent-rgb: 139, 149, 229;
             --app-accent-2: #9fd15b;
             --app-accent-2-rgb: 159, 209, 91;
+            --app-button-solid: #88be4a;
+            --app-button-solid-hover: #79ab42;
             --app-accent-contrast: #ffffff;
             --app-gradient: linear-gradient(120deg, #8b95e5 0%, #9fd15b 100%);
             --app-navbar-bg: rgba(12, 15, 32, 0.9);
@@ -200,25 +204,29 @@
         }
 
         .btn-primary {
-            background: var(--app-gradient);
-            border: 0;
+            background-color: var(--app-button-solid);
+            border-color: var(--app-button-solid);
             color: #ffffff;
         }
 
         .btn-primary:hover,
         .btn-primary:focus {
+            background-color: var(--app-button-solid-hover);
+            border-color: var(--app-button-solid-hover);
             color: #ffffff;
-            box-shadow: 0 8px 16px rgba(var(--app-accent-rgb), 0.34);
+            box-shadow: 0 8px 16px rgba(var(--app-accent-2-rgb), 0.34);
         }
 
         .btn-success {
-            background: linear-gradient(120deg, var(--app-accent-2) 0%, #6caf33 100%);
-            border: 0;
+            background-color: var(--app-button-solid);
+            border-color: var(--app-button-solid);
             color: #ffffff;
         }
 
         .btn-success:hover,
         .btn-success:focus {
+            background-color: var(--app-button-solid-hover);
+            border-color: var(--app-button-solid-hover);
             color: #ffffff;
             box-shadow: 0 8px 16px rgba(var(--app-accent-2-rgb), 0.34);
         }
@@ -268,10 +276,6 @@
 
         .table-striped > tbody > tr:nth-of-type(odd) > * {
             background-color: var(--app-striped);
-        }
-
-        .table tbody tr:hover > * {
-            background-color: var(--app-hover);
         }
 
         .table thead th {
@@ -379,7 +383,7 @@
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'log_filament' %}active{% endif %}" href="{{ url_for('log_filament') }}">Log Usage</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'new_roll' %}active{% endif %}" href="{{ url_for('new_roll') }}">Add Roll</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'popular_filaments' %}active{% endif %}" href="{{ url_for('popular_filaments') }}">Popular</a></li>
-                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'low_empty_filaments' %}active{% endif %}" href="{{ url_for('low_empty_filaments') }}">Low/Empty</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'low_empty_filaments' %}active{% endif %}" href="{{ url_for('low_empty_filaments') }}">Low</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'empty_rolls' %}active{% endif %}" href="{{ url_for('empty_rolls') }}">Empty</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'favorites' %}active{% endif %}" href="{{ url_for('favorites') }}">Favorites</a></li>
             </ul>

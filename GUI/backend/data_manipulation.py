@@ -13,6 +13,7 @@ PRODUCT_ID = 0x8003
 FILAMENT_AMOUNT = 1000.0
 
 BASE_DIR = os.path.dirname(__file__)
+WEIGHT_MAPPING_PATH = os.path.join(BASE_DIR, "..", "data", "weight_mapping.json")
 
 
 def read_scale_weight(timeout_sec: int = 5):
@@ -90,6 +91,75 @@ def get_roll_weight(barcode: str, sheet):
         return None
 
     return None
+
+
+def _normalize_text(value):
+    return str(value or "").strip().casefold()
+
+
+def _to_float(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _build_weight_key(*parts):
+    return "|".join(_normalize_text(part) for part in parts)
+
+
+def _load_weight_mapping_levels():
+    mapping = _load_json(WEIGHT_MAPPING_PATH)
+    if not isinstance(mapping, dict):
+        return {}
+    levels = mapping.get("levels")
+    return levels if isinstance(levels, dict) else {}
+
+
+def get_roll_weight_from_map(sheet, brand: str, color: str, material: str, attribute_1: str, attribute_2: str):
+    """
+    Estimate roll weight for a used roll using weight_mapping.json.
+    Returns (weight, match_level) where weight is rounded to 2 decimals.
+    """
+    _ = sheet  # Kept for compatibility with existing callers.
+
+    target_brand = _normalize_text(brand)
+    target_color = _normalize_text(color)
+    target_material = _normalize_text(material)
+    target_attr1 = _normalize_text(attribute_1)
+    target_attr2 = _normalize_text(attribute_2)
+
+    if not target_material:
+        return None, None
+
+    levels = _load_weight_mapping_levels()
+    if not levels:
+        return None, None
+
+    queries = (
+        (
+            "brand+color+material+attributes",
+            _build_weight_key(target_brand, target_color, target_material, target_attr1, target_attr2),
+        ),
+        (
+            "brand+material+attributes",
+            _build_weight_key(target_brand, target_material, target_attr1, target_attr2),
+        ),
+        ("brand+material", _build_weight_key(target_brand, target_material)),
+        ("material+attributes", _build_weight_key(target_material, target_attr1, target_attr2)),
+        ("material", _build_weight_key(target_material)),
+    )
+
+    for level_name, level_key in queries:
+        level_map = levels.get(level_name)
+        if not isinstance(level_map, dict):
+            continue
+        mapped_weight = _to_float(level_map.get(level_key))
+        if mapped_weight is None or mapped_weight <= 0:
+            continue
+        return round(float(mapped_weight), 2), level_name
+
+    return None, None
 
 
 def decode_barcode(barcode: str):
