@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome | Filament Logs{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-10">
+        <div class="app-page">
+            <div class="app-page-panel">
+                <h1 class="mb-2">First-Launch Setup</h1>
+                <p class="app-page-meta">
+                    Configure common defaults and review the core workflow before using the app.
+                </p>
+            </div>
+
+            <div class="app-page-panel">
+                <h2 class="h5 mb-3">Quick Start Guide</h2>
+                <ol class="mb-0">
+                    <li>Use <strong>Add Roll</strong> to register new filament with barcode + starting weight.</li>
+                    <li>Use <strong>Log Usage</strong> whenever you measure a roll after printing.</li>
+                    <li>Use <strong>Favorites</strong> to star commonly used materials/colors.</li>
+                    <li>Use <strong>Usage Stats</strong> to track total and grouped consumption over time.</li>
+                    <li>Use <strong>Report Bug</strong> if anything behaves unexpectedly.</li>
+                </ol>
+            </div>
+
+            <form method="post" class="app-page-panel">
+                <input type="hidden" name="next" value="{{ next_path }}">
+                <h2 class="h5 mb-3">Configuration Defaults</h2>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="theme" class="form-label">Theme</label>
+                        <select class="form-select" id="theme" name="theme">
+                            {% for option in theme_options %}
+                            <option value="{{ option }}" {% if settings.theme == option %}selected{% endif %}>{{ option|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="alert_mode" class="form-label">Alert Handling</label>
+                        <select class="form-select" id="alert_mode" name="alert_mode">
+                            {% for option in alert_mode_options %}
+                            <option value="{{ option }}" {% if settings.alert_mode == option %}selected{% endif %}>
+                                {% if option == 'all' %}Show all banners{% endif %}
+                                {% if option == 'errors_only' %}Only show errors{% endif %}
+                                {% if option == 'silent' %}Silent mode{% endif %}
+                                {% if option == 'browser' %}Browser notifications{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="rows_per_page" class="form-label">Rows Per Page</label>
+                        <input
+                            type="number"
+                            min="5"
+                            max="200"
+                            class="form-control"
+                            id="rows_per_page"
+                            name="rows_per_page"
+                            value="{{ settings.rows_per_page }}"
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="default_location" class="form-label">Default New-Roll Location</label>
+                        <select class="form-select" id="default_location" name="default_location">
+                            <option value="Lab" {% if settings.default_location == 'Lab' %}selected{% endif %}>Lab</option>
+                            <option value="Storage" {% if settings.default_location == 'Storage' %}selected{% endif %}>Storage</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="default_roll_condition" class="form-label">Default Roll Condition</label>
+                        <select class="form-select" id="default_roll_condition" name="default_roll_condition">
+                            {% for option in roll_condition_options %}
+                            <option value="{{ option }}" {% if settings.default_roll_condition == option %}selected{% endif %}>
+                                {% if option == 'new' %}New / Full Roll{% else %}Used / Partial Roll{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="popular_weeks" class="form-label">Default Popular Window (weeks)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="104"
+                            class="form-control"
+                            id="popular_weeks"
+                            name="popular_weeks"
+                            value="{{ settings.popular_weeks }}"
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="filament_amount_g" class="form-label">Configured Filament Amount (g)</label>
+                        <input
+                            type="number"
+                            min="100"
+                            max="10000"
+                            step="0.01"
+                            class="form-control"
+                            id="filament_amount_g"
+                            name="filament_amount_g"
+                            value="{{ settings.filament_amount_g }}"
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="low_threshold_g" class="form-label">Low Threshold (g)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="10000"
+                            step="0.01"
+                            class="form-control"
+                            id="low_threshold_g"
+                            name="low_threshold_g"
+                            value="{{ settings.low_threshold_g }}"
+                        >
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="empty_threshold_g" class="form-label">Empty Threshold (g)</label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="1000"
+                            step="0.01"
+                            class="form-control"
+                            id="empty_threshold_g"
+                            name="empty_threshold_g"
+                            value="{{ settings.empty_threshold_g }}"
+                        >
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <button type="submit" name="action" value="save" class="btn btn-primary">
+                        Save and Continue
+                    </button>
+                    <button type="submit" name="action" value="skip" class="btn btn-outline-secondary">
+                        Skip for Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

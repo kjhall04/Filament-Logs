@@ -68,6 +68,43 @@
         display: block;
     }
 
+    .update-status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4rem 0.7rem;
+        font-size: 0.95rem;
+    }
+
+    .update-status .status-label {
+        font-weight: 600;
+    }
+
+    .update-status.is-error {
+        color: #b26b00;
+    }
+
+    .update-status.is-success {
+        color: #0f8f4d;
+    }
+
+    .update-status a {
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .update-status a:hover {
+        text-decoration: underline;
+    }
+
+    html[data-theme="dark"] .update-status.is-error {
+        color: #ffbf69;
+    }
+
+    html[data-theme="dark"] .update-status.is-success {
+        color: #8de7a7;
+    }
+
     html[data-theme="dark"] .settings-form .form-select {
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 10'%3e%3cpath fill='%23b6c0ff' d='M1.5 1.5L8 8l6.5-6.5L16 3 8 10 0 3z'/%3e%3c/svg%3e");
     }
@@ -75,9 +112,60 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="mb-3">Settings</h1>
+<div class="app-page">
+<div class="app-page-header">
+    <h1 class="app-page-title">Settings</h1>
+</div>
 
-<form method="post" class="card p-3 p-md-4 settings-form">
+<section class="app-page-panel">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+            <h2 class="h5 mb-1">Version and Updates</h2>
+            <p class="mb-1">
+                Current version:
+                <strong>v{{ app_release.version }}</strong>
+                <span class="text-muted">({{ app_release.release_channel|capitalize }} channel)</span>
+            </p>
+            {% if app_release.released_at %}
+            <p class="text-muted mb-0">Released: {{ app_release.released_at }}</p>
+            {% endif %}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" id="checkUpdatesBtn" class="btn btn-outline-secondary btn-sm">
+                Check for Updates
+            </button>
+            <a href="{{ url_for('bug_report') }}" class="btn btn-outline-secondary btn-sm">Report a Bug</a>
+            <a href="{{ url_for('welcome', next=url_for('settings')) }}" class="btn btn-outline-secondary btn-sm">Run Setup Guide</a>
+        </div>
+    </div>
+    <div id="updateStatus" class="update-status text-muted mt-3">
+        {% if app_release.update_manifest_url %}
+        <span class="status-label">Ready:</span>
+        <span>Update checks are configured and can be run now.</span>
+        {% else %}
+        <span class="status-label">Not configured:</span>
+        <span>Set <code>UPDATE_MANIFEST_URL</code> (or <code>update_manifest_url</code> in <code>app_release.json</code>) to enable online update checks.</span>
+        {% endif %}
+    </div>
+</section>
+
+<section class="app-page-panel">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+            <h2 class="h5 mb-1">Order Links</h2>
+            <p class="mb-1">
+                Favorites now use brand-based order links from:
+                <code>GUI/data/order_links.json</code>
+            </p>
+            <p class="text-muted mb-0">
+                Set <code>ORDER_LINKS_PATH</code> to override this file path.
+            </p>
+        </div>
+        <a href="{{ url_for('favorites') }}" class="btn btn-outline-secondary btn-sm">View Favorites</a>
+    </div>
+</section>
+
+<form method="post" class="app-page-panel settings-form">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div class="settings-toggle" role="tablist" aria-label="Settings sections">
             <button type="button" class="settings-tab is-active" id="generalTab" data-pane="generalPane">General</button>
@@ -241,12 +329,15 @@
         <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
     </div>
 </form>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 const tabs = Array.from(document.querySelectorAll(".settings-tab"));
 const panes = Array.from(document.querySelectorAll(".settings-pane"));
+const checkUpdatesBtn = document.getElementById("checkUpdatesBtn");
+const updateStatusEl = document.getElementById("updateStatus");
 
 function showPane(targetId) {
     tabs.forEach((tab) => {
@@ -260,5 +351,103 @@ function showPane(targetId) {
 tabs.forEach((tab) => {
     tab.addEventListener("click", () => showPane(tab.dataset.pane));
 });
+
+function isSafeUrl(value) {
+    return typeof value === "string" && /^https?:\/\//i.test(value);
+}
+
+function renderUpdateStatus(label, message, state = "neutral", links = []) {
+    if (!updateStatusEl) {
+        return;
+    }
+
+    updateStatusEl.classList.remove("is-error", "is-success");
+    if (state === "error") {
+        updateStatusEl.classList.add("is-error");
+    } else if (state === "success") {
+        updateStatusEl.classList.add("is-success");
+    }
+
+    updateStatusEl.textContent = "";
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "status-label";
+    labelEl.textContent = `${label}:`;
+    updateStatusEl.appendChild(labelEl);
+
+    const messageEl = document.createElement("span");
+    messageEl.textContent = message;
+    updateStatusEl.appendChild(messageEl);
+
+    links.forEach((link) => {
+        if (!isSafeUrl(link.href)) {
+            return;
+        }
+        const anchor = document.createElement("a");
+        anchor.href = link.href;
+        anchor.textContent = link.label;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        updateStatusEl.appendChild(anchor);
+    });
+}
+
+async function checkForUpdates() {
+    if (!checkUpdatesBtn) {
+        return;
+    }
+
+    const originalText = checkUpdatesBtn.textContent;
+    checkUpdatesBtn.disabled = true;
+    checkUpdatesBtn.textContent = "Checking...";
+    renderUpdateStatus("Checking", "Contacting update server...");
+
+    try {
+        const response = await fetch("{{ url_for('api_update_check') }}", {
+            headers: { "Accept": "application/json" }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.error) {
+            renderUpdateStatus("Unavailable", data.error, "error");
+            return;
+        }
+
+        if (data.update_available) {
+            const links = [];
+            if (data.download_url) {
+                links.push({ label: "Download update", href: data.download_url });
+            }
+            if (data.notes_url) {
+                links.push({ label: "Release notes", href: data.notes_url });
+            }
+            renderUpdateStatus(
+                "Update available",
+                `v${data.latest_version} is newer than your v${data.current_version}.`,
+                "success",
+                links
+            );
+            return;
+        }
+
+        renderUpdateStatus(
+            "Up to date",
+            `You are running the latest version (v${data.current_version}).`,
+            "success"
+        );
+    } catch (error) {
+        renderUpdateStatus("Error", `Update check failed (${error.message}).`, "error");
+    } finally {
+        checkUpdatesBtn.disabled = false;
+        checkUpdatesBtn.textContent = originalText;
+    }
+}
+
+if (checkUpdatesBtn) {
+    checkUpdatesBtn.addEventListener("click", checkForUpdates);
+}
 </script>
 {% endblock %}

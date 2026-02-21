@@ -3,64 +3,88 @@
 {% block title %}Favorites | Filament Logs{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Favorite Filaments</h1>
-    <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
-</div>
+<div class="app-page">
+    <div class="app-page-header">
+        <h1 class="app-page-title">Favorite Filaments</h1>
+        <div class="app-page-actions">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Back to Inventory</a>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <input type="text" id="searchInput" class="form-control" placeholder="Search favorites...">
-</div>
+    <section class="app-page-panel">
+        <div class="mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search favorites... (supports color families like 'blue')">
+        </div>
 
-<div class="table-responsive">
-    <table class="table table-striped" id="favoritesTable">
-        <thead>
-            <tr>
-                <th>Brand</th>
-                <th>Color</th>
-                <th>Material</th>
-                <th>Attribute 1</th>
-                <th>Attribute 2</th>
-                <th>Count</th>
-                <th>Low</th>
-                <th>Buy</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for fav in favorites %}
-            <tr>
-                <td>{{ fav.brand or '' }}</td>
-                <td>{{ fav.color or '' }}</td>
-                <td>{{ fav.material or '' }}</td>
-                <td>{{ fav.attribute_1 or '' }}</td>
-                <td>{{ fav.attribute_2 or '' }}</td>
-                <td>{{ fav.total_count }}</td>
-                <td>{{ fav.low_count }}</td>
-                <td>
-                    {% if fav.amazon_url %}
-                    <a href="{{ fav.amazon_url }}" target="_blank" class="btn btn-sm btn-primary">Amazon</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <div class="table-responsive">
+            <table class="table table-striped" id="favoritesTable">
+                <thead>
+                    <tr>
+                        <th>Brand</th>
+                        <th>Color</th>
+                        <th>Material</th>
+                        <th>Attribute 1</th>
+                        <th>Attribute 2</th>
+                        <th>Count</th>
+                        <th>Low</th>
+                        <th>Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fav in favorites %}
+                    <tr>
+                        <td>{{ fav.brand or '' }}</td>
+                        <td>{{ fav.color or '' }}</td>
+                        <td>{{ fav.material or '' }}</td>
+                        <td>{{ fav.attribute_1 or '' }}</td>
+                        <td>{{ fav.attribute_2 or '' }}</td>
+                        <td>{{ fav.total_count }}</td>
+                        <td>{{ fav.low_count }}</td>
+                        <td>
+                            {% if fav.order_url %}
+                            <a href="{{ fav.order_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary">{{ fav.order_label }}</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const rows = Array.from(document.querySelectorAll("#favoritesTable tbody tr"));
+const colorSearchTokens = {{ color_search_tokens|default({}, true)|tojson|safe }};
+
+function normalizeSearchText(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function buildRowSearchBlob(row) {
+    const cells = Array.from(row.querySelectorAll("td"));
+    const baseText = cells
+        .map((cell) => normalizeSearchText(cell.textContent))
+        .filter(Boolean)
+        .join(" ");
+    const colorText = normalizeSearchText(cells[1] ? cells[1].textContent : "");
+    const categoryTokens = Array.isArray(colorSearchTokens[colorText]) ? colorSearchTokens[colorText] : [];
+    return `${baseText} ${categoryTokens.join(" ")}`.trim();
+}
+
+rows.forEach((row) => {
+    row.dataset.searchBlob = buildRowSearchBlob(row);
+});
+
 document.getElementById("searchInput").addEventListener("input", function () {
-    const filter = this.value.trim().toLowerCase();
-    const rows = document.querySelectorAll("#favoritesTable tbody tr");
+    const filter = normalizeSearchText(this.value);
+    const filterTerms = filter.split(" ").filter(Boolean);
 
     rows.forEach((row) => {
-        let match = false;
-        row.querySelectorAll("td").forEach((cell) => {
-            if (cell.textContent.toLowerCase().includes(filter)) {
-                match = true;
-            }
-        });
+        const searchBlob = row.dataset.searchBlob || "";
+        const match = filterTerms.every((term) => searchBlob.includes(term));
         row.style.display = match ? "" : "none";
     });
 });
