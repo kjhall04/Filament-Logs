@@ -76,12 +76,14 @@ def get_most_popular_filaments(file_path: str = EXCEL_PATH, top_n: int = 10, wee
 def get_low_or_empty_filaments(file_path: str = EXCEL_PATH, low_threshold: float = LOW_THRESHOLD):
     """
     Return filaments that are marked empty or have filament amount below low_threshold.
-    Each dict contains: brand, color, material, attribute_1, attribute_2, weight, is_favorite
+    Each dict contains: brand, color, material, attribute_1, attribute_2, weight,
+    is_favorite, is_empty, last_logged
     """
     sheet = _load_sheet(file_path)
     results = []
 
     for row in sheet.iter_rows(min_row=2, values_only=True):
+        last_logged = row[0] if len(row) > 0 else None
         brand = row[2] if len(row) > 2 else None
         color = row[3] if len(row) > 3 else None
         material = row[4] if len(row) > 4 else None
@@ -102,12 +104,14 @@ def get_low_or_empty_filaments(file_path: str = EXCEL_PATH, low_threshold: float
 
         if is_empty == 'true' or (filament_amount is not None and filament_amount < low_threshold):
             results.append({
+                'last_logged': last_logged,
                 'brand': brand,
                 'color': color,
                 'material': material,
                 'attribute_1': attribute_1,
                 'attribute_2': attribute_2,
                 'weight': filament_amount,
+                'is_empty': is_empty,
                 'is_favorite': favorite
             })
 
