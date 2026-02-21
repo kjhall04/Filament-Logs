@@ -7,8 +7,8 @@
     <style>
         .table-responsive { max-height: 600px; width: 100%; overflow-y: auto; }
         .search-bar { width: 700px; }
-        .container {
-            padding: 0px;
+        .page-container {
+            padding: 0;
             margin-top: 24px;
         }
         .action-bar {
@@ -17,7 +17,7 @@
     </style>
 </head>
 <body>
-<div class="container mt-4">
+<div class="container page-container">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h1 class="mb-0" style="font-size: 60px;">Filament Inventory</h1>
         <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
