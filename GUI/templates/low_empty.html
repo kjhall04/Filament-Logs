@@ -1,29 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Low/Empty Filaments</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .search-bar { max-width: 400px; }
-        .container {
-            padding: 0px;
-            margin-top: 24px;
-        }
-    </style>
-</head>
-<body>
-<div class="container mt-4">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="mb-0">Low/Empty Filaments</h1>
-        <img src="{{ url_for('static', filename='MakerCampus_Logo.jpg') }}" alt="Logo" style="height:100px;">
-    </div>
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">Back to Inventory</a>
-        <input type="text" id="searchInput" class="form-control search-bar" placeholder="Search..." autocomplete="off">
-    </div>
-    <hr>
-    <table class="table table-striped">
+{% extends "base.html" %}
+
+{% block title %}Low/Empty Filaments{% endblock %}
+{% block page_title %}Low/Empty Filaments{% endblock %}
+
+{% block content %}
+<div class="mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back to Inventory</a>
+    <input type="text" id="searchInput" class="form-control search-bar" placeholder="Search..." autocomplete="off">
+</div>
+<hr>
+<div class="table-responsive">
+    <table class="table table-striped table-modern">
         <thead>
             <tr>
                 <th style="width:40px;"></th>
@@ -38,7 +25,7 @@
         <tbody>
             {% for filament in filaments %}
             <tr>
-                <td style="text-align:center; vertical-align:middle;">
+                <td class="text-center align-middle">
                     {% if filament.is_favorite and filament.is_favorite|lower == 'true' %}
                         <span style="color:gold; font-size:2rem; line-height:1; display:inline-flex; align-items:center; justify-content:center;">&#9733;</span>
                     {% endif %}
@@ -54,16 +41,16 @@
         </tbody>
     </table>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}
+
+{% block scripts %}
 <script>
-    // Dynamic search filter for all columns
     document.getElementById('searchInput').addEventListener('input', function() {
         let filter = this.value.trim().toLowerCase();
         let rows = document.querySelectorAll('table tbody tr');
         rows.forEach(row => {
             let match = false;
             if (filter === "favorite") {
-                // Show only rows with a gold star
                 const star = row.querySelector('td span');
                 match = star && star.style.color === "gold";
             } else {
@@ -77,5 +64,4 @@
         });
     });
 </script>
-</body>
-</html>
+{% endblock %}
