@@ -1,0 +1,44 @@
+name: Bug report
+description: Report an issue with Filament Logs
+title: "bug: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What went wrong?
+      description: A quick description of the problem.
+      placeholder: The app crashes when I submit a new roll.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Keep this short. Bullet points are great.
+      placeholder: |
+        1. Open "Add New Filament Roll"
+        2. Enter details
+        3. Click "Generate Barcode"
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: I expected the barcode page to load.
+    validations:
+      required: false
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment (optional)
+      description: OS/browser or anything else that might help.
+      placeholder: Windows 11, Chrome 131
+    validations:
+      required: false
