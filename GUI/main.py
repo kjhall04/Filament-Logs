@@ -62,13 +62,14 @@ def popular_filaments():
 def low_empty_filaments():
     wb, sheet = get_sheet()
     low_empty = spreadsheet_stats.get_low_or_empty_filaments()
-    return render_template("low_empty.html", filaments=low_empty)
+    return render_template("low_empty.html", filaments=low_empty, empty_only=False)
 
 @app.route("/empty_rolls")
 def empty_rolls():
     wb, sheet = get_sheet()
-    empty = spreadsheet_stats.get_empty_rolls()
-    return render_template("empty_rolls.html", rolls=empty)
+    low_empty = spreadsheet_stats.get_low_or_empty_filaments()
+    empty = [filament for filament in low_empty if filament.get("is_empty") == "true"]
+    return render_template("low_empty.html", filaments=empty, empty_only=True)
 
 @app.route("/log", methods=["GET", "POST"])
 def log_filament():
