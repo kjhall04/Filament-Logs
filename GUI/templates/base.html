@@ -27,6 +27,9 @@
             --app-accent-contrast: #ffffff;
             --app-gradient: linear-gradient(120deg, #201870 0%, #88c038 100%);
             --app-navbar-bg: rgba(255, 255, 255, 0.9);
+            --app-shell-top-gap: 0.5rem;
+            --app-shell-side-gap: 0.5rem;
+            --app-content-top-gap: 1.5rem;
             --app-bg-image:
                 radial-gradient(70rem 42rem at -10% -16%, rgba(32, 24, 112, 0.2), transparent 58%),
                 radial-gradient(58rem 32rem at 112% -12%, rgba(136, 192, 56, 0.2), transparent 55%),
@@ -39,6 +42,12 @@
             --bs-emphasis-color: var(--app-text);
             --bs-border-color: var(--app-border);
             --bs-tertiary-bg: var(--app-surface);
+        }
+
+        html {
+            /* Keep layout width stable between pages with/without vertical scrollbars. */
+            scrollbar-gutter: stable;
+            overflow-y: scroll;
         }
 
         html[data-theme="dark"] {
@@ -76,6 +85,7 @@
             background-attachment: fixed;
             color: var(--app-text);
             font-family: "Sora", "Segoe UI", sans-serif;
+            padding-top: var(--app-shell-top-gap);
         }
 
         h1,
@@ -96,7 +106,7 @@
             border-color: var(--app-border);
             border-top: 0;
             border-radius: 1rem;
-            margin: 0 0.75rem;
+            margin: 0 var(--app-shell-side-gap);
             box-shadow: var(--app-card-shadow);
         }
 
@@ -109,11 +119,15 @@
         .navbar .navbar-brand {
             font-weight: 700;
             letter-spacing: 0.02em;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .navbar .nav-link {
             border-radius: 999px;
             padding: 0.35rem 0.85rem !important;
+            font-weight: 600;
+            white-space: nowrap;
             transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
         }
 
@@ -123,7 +137,6 @@
         }
 
         .navbar .nav-link.active {
-            font-weight: 600;
             color: #ffffff;
             background: var(--app-gradient);
             box-shadow: 0 6px 14px rgba(var(--app-accent-rgb), 0.35);
@@ -153,6 +166,18 @@
             width: auto;
             border-radius: 0.65rem;
             background-color: #ffffff;
+        }
+
+        .app-navbar-links {
+            min-width: 0;
+        }
+
+        .app-navbar-meta {
+            flex: 0 0 auto;
+        }
+
+        .app-navbar-meta .navbar-text {
+            white-space: nowrap;
         }
 
         .text-muted,
@@ -288,7 +313,9 @@
         }
 
         .app-container {
-            margin-top: 1.5rem;
+            margin-top: 0;
+            padding-top: var(--app-content-top-gap);
+            display: flow-root;
         }
 
         .app-page {
@@ -473,7 +500,36 @@
             color: var(--app-text) !important;
         }
 
+        @media (min-width: 992px) {
+            .navbar .container-fluid {
+                min-height: 88px;
+            }
+
+            .navbar .navbar-collapse {
+                display: flex !important;
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .navbar .app-navbar-links {
+                flex-wrap: nowrap;
+            }
+
+            .navbar .app-navbar-meta {
+                display: flex;
+                flex-wrap: nowrap;
+                align-items: center;
+                gap: 0.5rem;
+                margin-left: auto;
+            }
+        }
+
         @media (max-width: 991.98px) {
+            body {
+                padding-top: 0;
+            }
+
             .navbar {
                 margin: 0;
                 border-radius: 0;
@@ -496,7 +552,7 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="appNavbar">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <ul class="navbar-nav app-navbar-links me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">Inventory</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'log_filament' %}active{% endif %}" href="{{ url_for('log_filament') }}">Log Usage</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'new_roll' %}active{% endif %}" href="{{ url_for('new_roll') }}">Add Roll</a></li>
@@ -506,7 +562,7 @@
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'empty_rolls' %}active{% endif %}" href="{{ url_for('empty_rolls') }}">Empty</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'favorites' %}active{% endif %}" href="{{ url_for('favorites') }}">Favorites</a></li>
             </ul>
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 app-navbar-meta">
                 <span class="navbar-text small">{{ app_settings.theme|capitalize }} mode</span>
                 <span class="navbar-text small">v{{ app_release.version }}</span>
                 <a href="{{ url_for('settings') }}" class="btn btn-outline-secondary btn-sm {% if request.endpoint == 'settings' %}active{% endif %}">Settings</a>

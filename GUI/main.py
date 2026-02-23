@@ -7,7 +7,6 @@ from flask import Flask, flash, jsonify, redirect, render_template, request, url
 
 from backend import (
     app_release,
-    bug_reports,
     color_search,
     data_manipulation,
     generate_barcode,
@@ -531,56 +530,6 @@ def api_update_check():
     timeout_sec = parse_int_setting(request.args.get("timeout_sec"), 4, 1, 20)
     status = app_release.check_for_updates(timeout_sec=timeout_sec)
     return jsonify(status), 200
-
-
-@app.route("/bug_report", methods=["GET", "POST"])
-def bug_report():
-    form_data = {
-        "severity": "medium",
-        "title": "",
-        "description": "",
-        "steps_to_reproduce": "",
-        "expected_behavior": "",
-        "actual_behavior": "",
-        "contact": "",
-    }
-
-    external_url = bug_reports.get_external_bug_report_url()
-
-    if request.method == "POST":
-        form_data = bug_reports.normalize_bug_report_form(request.form.to_dict())
-        release_info = app_release.load_local_release_info()
-        payload, errors = bug_reports.build_bug_report_payload(
-            form_data=form_data,
-            app_version=release_info.get("version", ""),
-            user_agent=request.headers.get("User-Agent", ""),
-            source_page=request.referrer or request.path,
-        )
-        if errors:
-            for message in errors:
-                flash(message, "error")
-            return render_template(
-                "bug_report.html",
-                form_data=form_data,
-                severity_options=bug_reports.SEVERITY_OPTIONS,
-                external_bug_report_url=external_url,
-            )
-
-        saved = bug_reports.save_bug_report(payload)
-        flash(f"Bug report submitted. Reference ID: {saved['id']}", "success")
-        if external_url:
-            flash(
-                "If needed, you can also submit this in the external bug tracker link below.",
-                "info",
-            )
-        return redirect(url_for("bug_report"))
-
-    return render_template(
-        "bug_report.html",
-        form_data=form_data,
-        severity_options=bug_reports.SEVERITY_OPTIONS,
-        external_bug_report_url=external_url,
-    )
 
 
 @app.route("/new_roll", methods=["GET", "POST"])
