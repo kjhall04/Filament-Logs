@@ -39,7 +39,6 @@ def parse_float(value, field_name):
     except ValueError as exc:
         raise ValueError(f"{field_name} must be a valid number.") from exc
 
-
 def parse_timestamp(value):
     if value is None:
         return datetime.min
@@ -441,23 +440,42 @@ def usage_stats_print():
     )
 
 
-@app.route("/low_empty")
-def low_empty_filaments():
+def normalize_stock_status_view(value):
+    normalized = str(value or "").strip().lower()
+    return normalized if normalized in ("low", "empty") else "low"
+
+
+@app.route("/stock_status")
+def stock_status():
+    view = normalize_stock_status_view(request.args.get("view"))
     app_settings = settings_store.load_settings()
     low_threshold, empty_threshold = get_threshold_settings(app_settings)
-    low_empty = spreadsheet_stats.get_low_or_empty_filaments(
+
+    if view == "empty":
+        rows = spreadsheet_stats.get_empty_rolls(empty_threshold=empty_threshold)
+    else:
+        rows = spreadsheet_stats.get_low_or_empty_filaments(
+            low_threshold=low_threshold,
+            empty_threshold=empty_threshold,
+        )
+
+    return render_template(
+        "stock_status.html",
+        view=view,
+        rows=rows,
         low_threshold=low_threshold,
         empty_threshold=empty_threshold,
     )
-    return render_template("low_empty.html", filaments=low_empty)
+
+
+@app.route("/low_empty")
+def low_empty_filaments():
+    return redirect(url_for("stock_status", view="low"))
 
 
 @app.route("/empty_rolls")
 def empty_rolls():
-    app_settings = settings_store.load_settings()
-    _, empty_threshold = get_threshold_settings(app_settings)
-    empty = spreadsheet_stats.get_empty_rolls(empty_threshold=empty_threshold)
-    return render_template("empty_rolls.html", rolls=empty)
+    return redirect(url_for("stock_status", view="empty"))
 
 
 @app.route("/log", methods=["GET", "POST"])

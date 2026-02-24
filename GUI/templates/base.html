@@ -30,6 +30,7 @@
             --app-shell-top-gap: 0.5rem;
             --app-shell-side-gap: 0.5rem;
             --app-content-top-gap: 1.5rem;
+            --app-page-header-min-height: 5.5rem;
             --app-bg-image:
                 radial-gradient(70rem 42rem at -10% -16%, rgba(32, 24, 112, 0.2), transparent 58%),
                 radial-gradient(58rem 32rem at 112% -12%, rgba(136, 192, 56, 0.2), transparent 55%),
@@ -118,6 +119,7 @@
 
         .navbar .navbar-brand {
             font-weight: 700;
+            font-size: 1.5rem;
             letter-spacing: 0.02em;
             white-space: nowrap;
             flex-shrink: 0;
@@ -324,22 +326,44 @@
             gap: 1rem;
         }
 
+        .app-page-narrow {
+            max-width: 1100px;
+            margin-inline: auto;
+        }
+
         .app-page-header {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: start;
             gap: 0.75rem 1rem;
+            min-height: var(--app-page-header-min-height);
+        }
+
+        .app-page-header > * {
+            min-width: 0;
         }
 
         .app-page-title {
             margin: 0;
         }
 
+        .app-page-header-meta {
+            justify-self: end;
+            text-align: right;
+            align-self: start;
+        }
+
+        .app-page-subtitle {
+            margin-top: 0.5rem;
+        }
+
         .app-page-actions {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
+            justify-self: end;
+            align-self: start;
+            justify-content: flex-end;
         }
 
         .app-page-meta {
@@ -358,6 +382,24 @@
         @media (min-width: 768px) {
             .app-page-panel {
                 padding: 1.25rem 1.5rem;
+            }
+
+            .app-page-actions {
+                flex-wrap: nowrap;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .app-page-header {
+                grid-template-columns: 1fr;
+                min-height: 0;
+            }
+
+            .app-page-actions,
+            .app-page-header-meta {
+                justify-self: start;
+                text-align: left;
+                justify-content: flex-start;
             }
         }
 
@@ -558,8 +600,7 @@
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'new_roll' %}active{% endif %}" href="{{ url_for('new_roll') }}">Add Roll</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'popular_filaments' %}active{% endif %}" href="{{ url_for('popular_filaments') }}">Popular</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'usage_stats' %}active{% endif %}" href="{{ url_for('usage_stats') }}">Usage Stats</a></li>
-                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'low_empty_filaments' %}active{% endif %}" href="{{ url_for('low_empty_filaments') }}">Low</a></li>
-                <li class="nav-item"><a class="nav-link {% if request.endpoint == 'empty_rolls' %}active{% endif %}" href="{{ url_for('empty_rolls') }}">Empty</a></li>
+                <li class="nav-item"><a class="nav-link {% if request.endpoint in ['stock_status', 'low_empty_filaments', 'empty_rolls'] %}active{% endif %}" href="{{ url_for('stock_status') }}">Stock</a></li>
                 <li class="nav-item"><a class="nav-link {% if request.endpoint == 'favorites' %}active{% endif %}" href="{{ url_for('favorites') }}">Favorites</a></li>
             </ul>
             <div class="d-flex align-items-center gap-2 app-navbar-meta">

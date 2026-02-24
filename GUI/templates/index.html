@@ -1,18 +1,46 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block title %}Inventory | Filament Logs{% endblock %}
+
+{% block head_extra %}
+<style>
+    .inventory-empty {
+        border: 1px dashed var(--app-border);
+        border-radius: 0.85rem;
+        background: var(--app-surface-soft);
+        padding: 1rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="app-page">
     <div class="app-page-header">
         <h1 class="app-page-title">Filament Inventory</h1>
-        <p class="app-page-meta">Total rolls: {{ total }}</p>
+        <div class="app-page-header-meta">
+            <p class="app-page-meta">Total rolls: {{ total }}</p>
+        </div>
     </div>
 
     <section class="app-page-panel">
         <div class="mb-3">
-            <input type="text" id="searchInput" class="form-control" placeholder="Search inventory... (supports color families like 'blue'; type 'favorite' for starred)">
+            <input
+                type="text"
+                id="searchInput"
+                class="form-control"
+                placeholder="Search inventory... (supports color families like 'blue'; type 'favorite' or 'starred')"
+            >
         </div>
+
+        {% if not filaments %}
+        <div class="inventory-empty my-3">
+            <p class="mb-1"><strong>No rolls in inventory yet.</strong></p>
+            <p class="app-page-meta mb-0">
+                Start by adding a roll, then use Log Usage to keep weights current.
+            </p>
+        </div>
+        {% endif %}
 
         <div class="table-responsive">
             <table class="table table-striped" id="filamentTable">
@@ -37,7 +65,7 @@
                 <tbody>
                     {% for filament in filaments %}
                     {% set is_favorite = filament|length > 12 and filament[12]|string|lower == 'true' %}
-                    <tr data-favorite="{{ 'true' if is_favorite else 'false' }}">
+                    <tr data-favorite="{{ 'true' if is_favorite else 'false' }}" data-search-row="true">
                         <td>
                             <button class="favorite-btn" type="button" data-barcode="{{ filament[1] }}" aria-label="Toggle favorite for {{ filament[1] }}">
                                 {% if is_favorite %}
@@ -78,9 +106,10 @@
 
 {% block scripts %}
 <script>
-const rows = Array.from(document.querySelectorAll("#filamentTable tbody tr"));
+const rows = Array.from(document.querySelectorAll("#filamentTable tbody tr[data-search-row='true']"));
 const perPage = Math.max(1, Number((window.APP_SETTINGS && window.APP_SETTINGS.rows_per_page) || 20));
 const colorSearchTokens = {{ color_search_tokens|default({}, true)|tojson|safe }};
+const searchInputEl = document.getElementById("searchInput");
 let currentPage = 1;
 let filteredRows = rows;
 
@@ -127,6 +156,9 @@ function showPage(page) {
 function renderPagination() {
     const totalPages = Math.max(1, Math.ceil(filteredRows.length / perPage));
     const pagination = document.getElementById("pagination");
+    if (!pagination) {
+        return;
+    }
     pagination.innerHTML = "";
 
     const prevDisabled = currentPage === 1 ? "disabled" : "";
@@ -144,14 +176,17 @@ function renderPagination() {
 
 function renderShowingInfo() {
     const info = document.getElementById("showingInfo");
+    if (!info) {
+        return;
+    }
     const start = (currentPage - 1) * perPage + 1;
     const end = Math.min(currentPage * perPage, filteredRows.length);
 
     info.textContent = `Showing ${filteredRows.length === 0 ? 0 : start}-${end} of ${filteredRows.length} entries`;
 }
 
-document.getElementById("searchInput").addEventListener("input", function () {
-    const filter = normalizeSearchText(this.value);
+function applySearchFilter(rawValue) {
+    const filter = normalizeSearchText(rawValue);
     const filterTerms = filter.split(" ").filter(Boolean);
     const requiresFavorite = filterTerms.includes("favorite") || filterTerms.includes("starred");
     const searchableTerms = filterTerms.filter((term) => term !== "favorite" && term !== "starred");
@@ -170,7 +205,13 @@ document.getElementById("searchInput").addEventListener("input", function () {
     });
 
     showPage(1);
-});
+}
+
+if (searchInputEl) {
+    searchInputEl.addEventListener("input", function () {
+        applySearchFilter(this.value);
+    });
+}
 
 document.querySelectorAll(".favorite-btn").forEach((button) => {
     button.addEventListener("click", async function (event) {
