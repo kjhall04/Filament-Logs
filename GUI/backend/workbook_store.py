@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from datetime import datetime
 import json
 
+from backend import catalog_normalization
 from backend.config import DATABASE_PATH, DATA_DIR, EXCEL_PATH
 
 
@@ -46,7 +47,7 @@ def _normalize_timestamp(value):
 
 
 _MAPPING_LOOKUP_CACHE = {}
-_CANONICALIZATION_SCHEMA_VERSION = 1
+_CANONICALIZATION_SCHEMA_VERSION = 2
 
 
 def _normalize_space(value):
@@ -54,7 +55,7 @@ def _normalize_space(value):
 
 
 def _lookup_key(value):
-    return _normalize_space(value).casefold()
+    return catalog_normalization.lookup_key(value)
 
 
 def _load_mapping(filename):
@@ -95,12 +96,7 @@ def _mapping_lookup(mapping_name):
     else:
         raw = {}
 
-    lookup = {}
-    for _, label in raw.items():
-        canonical = _normalize_space(label)
-        if not canonical:
-            continue
-        lookup[_lookup_key(canonical)] = canonical
+    lookup = catalog_normalization.build_label_lookup(mapping_name, raw)
 
     _MAPPING_LOOKUP_CACHE[mapping_name] = lookup
     return lookup
@@ -112,8 +108,11 @@ def _canonicalize_mapped_text(value, mapping_name):
         return ""
 
     lookup = _mapping_lookup(mapping_name)
-    canonical = lookup.get(_lookup_key(text))
-    return canonical if canonical is not None else text
+    for key in catalog_normalization.iter_lookup_keys(text):
+        canonical = lookup.get(key)
+        if canonical is not None:
+            return canonical
+    return text
 
 
 def normalize_text_case(value, field=None):

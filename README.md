@@ -76,6 +76,7 @@ Use `--overwrite` only when you want to replace an existing `.db`.
   - `GUI/data/color_mapping.json`
   - `GUI/data/material_mapping.json`
   - `GUI/data/attribute_mapping.json`
+  - `GUI/data/catalog_aliases.json` (optional aliases for canonical name matching)
   - `GUI/data/weight_mapping.json` (used-roll weight map)
 - Release/update files:
   - `GUI/data/app_release.json` (local app version + channel metadata)

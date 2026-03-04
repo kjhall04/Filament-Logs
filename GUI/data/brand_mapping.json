@@ -1,5 +1,5 @@
 {
-    "01": "Bambu Labs",
+    "01": "Bambu Lab",
     "02": "Overture",
     "03": "Polymaker",
     "04": "Prusa",
@@ -7,14 +7,14 @@
     "06": "Inland",
     "07": "MatterHackers",
     "08": "Ultimaker",
-    "09": "eSun",
+    "09": "eSUN",
     "10": "Hatchbox",
     "11": "ColorFabb",
     "12": "Raise3D",
     "13": "Filamentum",
     "14": "3D Solutech",
     "15": "Sunlu",
-    "16": "Proto-pasta",
+    "16": "ProtoPasta",
     "17": "XYZprinting",
     "18": "Taulman3D",
     "19": "SainSmart",
@@ -52,5 +52,11 @@
     "51": "Kingroon",
     "52": "JAYO",
     "53": "IIID MAX",
-    "54": "Panchroma"
+    "54": "Panchroma",
+    "55": "3DXTech",
+    "56": "NinjaTek",
+    "57": "Spectrum Filaments",
+    "58": "Atomic Filament",
+    "59": "Kexcelled",
+    "60": "Recreus"
 }

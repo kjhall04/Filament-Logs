@@ -11,6 +11,10 @@ DEFAULT_ORDER_LINKS = {
         "url_template": "https://www.amazon.com/s?k={query}",
     },
     "brands": {
+        "bambu lab": {
+            "label": "Bambu Store",
+            "url_template": "https://us.store.bambulab.com/search?q={query}",
+        },
         "bambu labs": {
             "label": "Bambu Store",
             "url_template": "https://us.store.bambulab.com/search?q={query}",

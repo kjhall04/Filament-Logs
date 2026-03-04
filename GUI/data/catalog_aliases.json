@@ -1,0 +1,105 @@
+{
+    "brand": {
+        "Bambu Lab": [
+            "Bambu Labs",
+            "Bambu",
+            "BambuLab"
+        ],
+        "eSUN": [
+            "eSun",
+            "ESUN"
+        ],
+        "ProtoPasta": [
+            "Proto-pasta",
+            "Proto Pasta"
+        ],
+        "QIDI Tech": [
+            "QIDI",
+            "Qidi Tech"
+        ],
+        "BASF Ultrafuse": [
+            "Ultrafuse",
+            "BASF"
+        ]
+    },
+    "material": {
+        "PC-ABS FR": [
+            "PC/ABS FR",
+            "PC ABS FR",
+            "PCABS FR"
+        ],
+        "PETG HF": [
+            "PETG-HF",
+            "PETGHF"
+        ],
+        "TPU 95A HF": [
+            "TPU95A HF",
+            "TPU95-HF"
+        ],
+        "LW-PLA": [
+            "LW PLA",
+            "Lightweight PLA"
+        ],
+        "PAHT-CF": [
+            "PAHT CF",
+            "PAHT-CF15"
+        ],
+        "PET-CF15": [
+            "PET CF15"
+        ],
+        "ABS Fusion+": [
+            "ABS Fusion Plus"
+        ]
+    },
+    "attribute": {
+        "AMS-Compatible": [
+            "AMS Compatible",
+            "AMS"
+        ],
+        "Glow in the Dark": [
+            "Glow",
+            "Luminous"
+        ],
+        "High-Flow": [
+            "HF",
+            "High Flow"
+        ],
+        "RFID-Tagged": [
+            "RFID",
+            "RFID Enabled"
+        ],
+        "Breakaway Support": [
+            "Support (Breakaway)",
+            "Breakaway"
+        ]
+    },
+    "color": {
+        "Space Gray": [
+            "Space Grey"
+        ],
+        "Texture Gray": [
+            "Texture Grey"
+        ],
+        "Urban Gray": [
+            "Urban Grey"
+        ],
+        "Concrete Gray": [
+            "Concrete Grey"
+        ],
+        "Anthracite Gray": [
+            "Anthracite Grey"
+        ],
+        "Gentleman's Grey": [
+            "Gentleman's Gray"
+        ],
+        "Marble Grey": [
+            "Marble Gray"
+        ],
+        "Slate Grey": [
+            "Slate Gray"
+        ],
+        "Orange Transparent": [
+            "Transparent Orange"
+        ]
+    }
+}

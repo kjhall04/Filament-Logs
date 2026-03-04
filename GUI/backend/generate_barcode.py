@@ -1,6 +1,7 @@
 import json
 import os
 
+from backend import catalog_normalization
 from backend.workbook_store import list_inventory_barcodes
 
 BASE_DIR = os.path.dirname(__file__)
@@ -26,15 +27,22 @@ def _flatten_color_mapping(color_mapping: dict) -> dict:
     return flattened
 
 
-def _normalize(value: str) -> str:
-    return str(value or "").strip().casefold()
+def _mapping_value_to_code(value: str, mapping_name: str, mapping: dict):
+    if str(value or "").strip() == "":
+        for code, label in mapping.items():
+            if catalog_normalization.normalize_space(label) == "":
+                return str(code)
+        return None
 
+    value_keys = catalog_normalization.iter_lookup_keys(value)
+    if not value_keys:
+        return None
 
-def _mapping_value_to_code(value: str, mapping: dict):
-    normalized_value = _normalize(value)
-    for code, label in mapping.items():
-        if _normalize(label) == normalized_value:
-            return str(code)
+    code_lookup = catalog_normalization.build_code_lookup(mapping_name, mapping)
+    for key in value_keys:
+        code = code_lookup.get(key)
+        if code is not None:
+            return code
     return None
 
 
@@ -81,11 +89,11 @@ def generate_filament_barcode(
     material_mapping = load_json("material_mapping.json")
     attribute_mapping = load_json("attribute_mapping.json")
 
-    brand_code = _mapping_value_to_code(brand, brand_mapping)
-    color_code = _mapping_value_to_code(color, color_mapping)
-    material_code = _mapping_value_to_code(material, material_mapping)
-    attribute_1_code = _mapping_value_to_code(attribute_1 or "", attribute_mapping)
-    attribute_2_code = _mapping_value_to_code(attribute_2 or "", attribute_mapping)
+    brand_code = _mapping_value_to_code(brand, "brand", brand_mapping)
+    color_code = _mapping_value_to_code(color, "color", color_mapping)
+    material_code = _mapping_value_to_code(material, "material", material_mapping)
+    attribute_1_code = _mapping_value_to_code(attribute_1 or "", "attribute", attribute_mapping)
+    attribute_2_code = _mapping_value_to_code(attribute_2 or "", "attribute", attribute_mapping)
 
     location_map = {"lab": "0", "storage": "1"}
     location_code = location_map.get(str(location).strip().lower())
